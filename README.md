@@ -1,7 +1,7 @@
 QwQuery
 ============================
 
-<p align="center"><img src="https://raw.githubusercontent.com/Zneiat/QwQuery/master/doc/screenshot/bootstrap.png"></p>
+<p align="center"><img src="./docs/screenshots/bootstrap.png"></p>
 
 QwQuery 是一个 Material Design 风格的学生考试成绩统计站
 
@@ -28,7 +28,7 @@ Features
     - 市平均分趋势
 - 控制台功能
     - 构建排名（录取人数风格）
-    - [统一原本不同的学校名和班级名（姓名作为桥梁）](https://github.com/Zneiat/QwQuery/blob/master/doc/%E4%B8%A4%E5%A0%86%E6%95%B0%E6%8D%AE%E7%BB%9F%E4%B8%80%E5%8E%9F%E6%9C%AC%E4%B8%8D%E5%90%8C%E7%9A%84%E5%AD%A6%E6%A0%A1%E5%90%8D%E5%92%8C%E7%8F%AD%E7%BA%A7%E5%90%8D%E7%9A%84%E6%96%B9%E6%B3%95.md)
+    - [统一原本不同的学校名和班级名（姓名作为桥梁）](./docs/两堆数据统一原本不同的学校名和班级名的方法.md)
 - 适配手机端 响应式页面
 
 Quick Start
@@ -38,6 +38,17 @@ Quick Start
 $ composer install
 $ php -r "copy('config/db.example.php', 'config/db.php');copy('config/params.example.php', 'config/params.php');"
 ```
+Donate
+------------
+如果您觉得我的项目对您有帮助，并且您愿意给予我一点小小的支持，您可以通过以下方式向我捐赠，这样可以维持项目持续地发展，非常感谢！ヽ(•̀ω•́ )ゝ
+
+If you are enjoying this app, please consider making a donation to keep it alive.
+
+| Alipay | Wechat | 
+| :------: | :------: | 
+| <img width="150" src="./docs/donate/alipay.png"> | <img width="150" src="./docs/donate/wechat.png"> | 
+
+捐赠者的名字将保存于 [捐赠者列表](https://github.com/Zneiat/donate-qwqaq)，非常感谢你们的支持
 
 Author
 ------------
@@ -52,8 +63,8 @@ Screenshots
 ------------
 
 <p align="center">
-<img src="https://raw.githubusercontent.com/Zneiat/QwQuery/master/doc/screenshot/home.png">
-<img src="https://raw.githubusercontent.com/Zneiat/QwQuery/master/doc/screenshot/charts.png">
-<img src="https://raw.githubusercontent.com/Zneiat/QwQuery/master/doc/screenshot/full-screen.png">
-<img src="https://raw.githubusercontent.com/Zneiat/QwQuery/master/doc/screenshot/phone.png">
+<img src="./docs/screenshots/home.png">
+<img src="./docs/screenshots/charts.png">
+<img src="./docs/screenshots/full-screen.png">
+<img src="./docs/screenshots/phone.png">
 </p>

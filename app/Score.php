@@ -275,12 +275,12 @@ class Score
                     $apiArr[$num][$fieldNameItem['FN']] = $score[$fieldNameItem['FN']];
                     
                     // DEMO
-                    $len = mb_strlen($score[$fieldNameItem['FN']]);
+                    /*$len = mb_strlen($score[$fieldNameItem['FN']]);
                     $testStr = '';
                     for ($i=0; $i<$len; $i++)
                         $testStr .= 'X';
                     
-                    $apiArr[$num][$fieldNameItem['FN']] = $testStr;
+                    $apiArr[$num][$fieldNameItem['FN']] = $testStr;*/
                 }
                 $num ++;
             }

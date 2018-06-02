@@ -272,6 +272,7 @@ class SiteController extends Controller
                 foreach ($data as $dataKey=>$dataItem) {
                     $arr[$dataItem[1]['LB']] =  $dataItem[0];
                 };
+                $arr[PM['LB']] = -intval($find->one()[PM['FN']]);
             }
             
             $scoreAvg[] = $arr;

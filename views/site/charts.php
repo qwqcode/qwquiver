@@ -18,11 +18,16 @@ $this->title = $dataDesc . ' - 图表趋势';
             <h2 class="card-title"><?= Html::encode($dataDesc) ?><?php if (!$subtitle): ?><small class="card-subtitle"><?= Html::encode($subtitle) ?></small><?php endif; ?></h2>
             
             <div class="actions">
-                <span onclick="toggleShowTotalScore(this);" class="actions__item">
-                    <i class="zmdi zmdi-square-o"></i> 仅显示总成绩
+                <span style="margin-right: 20px" id="show_fields">
+                    <span onclick="toggleShowFields(this, ['总分']);" class="actions__item">
+                        <i class="zmdi zmdi-square-o"></i> 仅总分
+                    </span>
+                    <span onclick="toggleShowFields(this, ['市排名']);" class="actions__item">
+                        <i class="zmdi zmdi-square-o"></i> 仅排名
+                    </span>
                 </span>
                 <span onclick="toggleOnlyShowFinalScore(this);" class="actions__item">
-                    <i class="zmdi zmdi-square-o"></i> 仅显示毕业月考成绩
+                    <i class="zmdi zmdi-square-o"></i> 仅月考
                 </span>
             </div>
         </div>
@@ -33,70 +38,76 @@ $this->title = $dataDesc . ' - 图表趋势';
 </div>
 
 <script>
-    var rawData = <?= Json::encode($scoreAvg); ?>;
-    var _onlyFiledName = null;
-    <?php if (!empty($onlyFiledName)): ?>
-    _onlyFiledName = <?= Json::encode([$onlyFiledName ?? '']); ?>;
+    var _rawData = <?= Json::encode($scoreAvg); ?>;
+    
+    var _showFiledNames = null;
+    var _showFiledNamesRestDefault = function () {
+        _showFiledNames = ['语文', '数学', '英语', '物理', '化学', '政治', '历史', '地理', '生物'];
+    };
+    
+    <?php if (empty($onlyFiledName)): ?>
+        _showFiledNamesRestDefault();
+    <?php else: ?>
+        _showFiledNames = <?= Json::encode([$onlyFiledName ?? '']); ?>;
     <?php endif; ?>
     
     $(document).ready(function () {
-        buildChart(rawData, _onlyFiledName);
+        buildChart(_rawData, _showFiledNames);
     });
-  
-    function getFinalScoreData() {
-    var data = [];
-    for (var i in rawData) {
-        if (rawData[i]['name'].indexOf('毕业') > -1) {
-            data.push(rawData[i]);
-        }
-    }
-    return data;
-  }
-  
-    var isShowTotalScore = false;
-    var isOnlyShowFinalScore = false;
-    
-    function toggleShowTotalScore(btnObj) {
-        if (isShowTotalScore) {
-            $(btnObj).find('i').attr('class', 'zmdi zmdi-square-o');
-            isShowTotalScore = false;
-        } else {
-            $(btnObj).find('i').attr('class', 'zmdi zmdi-check-square');
-            isShowTotalScore = true;
-        }
-      
-        rebuildChart();
-    }
 
-    function toggleOnlyShowFinalScore(btnObj) {
-        if (isOnlyShowFinalScore) {
-            isOnlyShowFinalScore = false;
-            $(btnObj).find('i').attr('class', 'zmdi zmdi-square-o');
+    function toggleShowFields(btnObj, fieldNames) {
+        var on = btnCheck(btnObj);
+        if (!on) {
+            _showFiledNames = fieldNames;
         } else {
-            isOnlyShowFinalScore = true;
-            $(btnObj).find('i').attr('class', 'zmdi zmdi-check-square');
+            _showFiledNamesRestDefault();
         }
-      
         rebuildChart();
+        $('#show_fields').find('span').each(function (i, item) {
+            btnCheck(item, false);
+        });
+        btnCheck(btnObj, !on);
+    }
+    
+    var isOnlyShowFinalScore = false;
+    function toggleOnlyShowFinalScore(btnObj) {
+        var on = btnCheck(btnObj);
+        isOnlyShowFinalScore = !on;
+        rebuildChart();
+        btnCheck(btnObj, !on);
+    }
+    
+    function btnCheck(btnObj, needCheck) {
+        if (typeof needCheck === 'boolean') {
+            if (needCheck) {
+                $(btnObj).find('i').attr('class', 'zmdi zmdi-check-square');
+            } else {
+                $(btnObj).find('i').attr('class', 'zmdi zmdi-square-o');
+            }
+        } else {
+            return $(btnObj).find('i').is('.zmdi.zmdi-check-square');
+        }
     }
   
     function rebuildChart() {
-        var data = rawData;
-        var fields = null;
-        if (isShowTotalScore)
-            fields = ['总分'];
-        if (isOnlyShowFinalScore)
-            data = getFinalScoreData();
-            
-        buildChart(data, fields);
+        var data = _rawData;
+        
+        if (isOnlyShowFinalScore) {
+            data = (function getFinalScoreData() {
+                var arr = [];
+                for (var i in _rawData) {
+                    if (_rawData[i]['name'].indexOf('毕业') > -1) {
+                        arr.push(_rawData[i]);
+                    }
+                }
+                return arr;
+            })();
+        }
+        
+        buildChart(data, _showFiledNames);
     }
   
     function buildChart(data, fields) {
-        
-        if (typeof(fields) === "undefined" || !fields) {
-            fields = ['语文', '数学', '英语', '物理', '化学', '政治', '历史', '地理', '生物'];
-        }
-
         window._chart = null;
         $('.chart-wrap').html('<div id="myChart"></div>');
         
@@ -126,8 +137,8 @@ $this->title = $dataDesc . ' - 图表趋势';
         });
         chart.axis('score', {
             label: {
-                formatter: val => {
-                    return val + ' 分';
+                formatter: function (val) {
+                    return val;
                 }
             }
         });

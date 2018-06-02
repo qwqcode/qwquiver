@@ -1094,9 +1094,17 @@ a.desc:after {
     .actions__item:not(:last-child) {
         margin-right: 5px;
     }
+
+    .actions:not(.actions--inverse) .actions__item:hover {
+        color: #707070;
+    }
 }
 
-.actions__item>i {display: inline-block;margin-right: 2px;width: 15px;}
+.actions__item>i {
+    display: inline-block;
+    margin-right: 2px;
+    width: 15px;
+}
 
 .actions--inverse .actions__item {
     color: rgba(255,255,255,.7)

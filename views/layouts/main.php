@@ -37,7 +37,7 @@ $baseActions = [
     var _hmt = _hmt || [];
     (function() {
         var hm = document.createElement("script");
-        hm.src = "https://hm.baidu.com/hm.js?edf0f175c0cb7427ec9a2a712ba95228";
+        hm.src = "https://hm.baidu.com/hm.js?<?= Yii::$app->params['baidu_tongji'] ?>";
         var s = document.getElementsByTagName("script")[0];
         s.parentNode.insertBefore(hm, s);
     })();

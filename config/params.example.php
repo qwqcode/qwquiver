@@ -18,4 +18,5 @@ return [
         'normalTableId' => '93_1_201803',
     ],
     'cookieValidationKey' => '',
+	'baidu_tongji' => '',
 ];

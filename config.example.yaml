@@ -1,0 +1,6 @@
+name: "成绩统计站" # 网站标题
+copyright: "(c) 2020 qwqaq.com" # 网站版权
+address: "qwqaq.com" # 域名
+port: 8080 # 端口
+dbFile: "./data/qwquiver.db" # 数据库文件路径
+logFile: "./data/qwquiver.log" # 日志文件路径

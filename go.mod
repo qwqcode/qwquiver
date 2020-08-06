@@ -3,6 +3,7 @@ module github.com/qwqcode/qwquiver
 go 1.14
 
 require (
+	github.com/360EntSecGroup-Skylar/excelize v1.4.1
 	github.com/Joker/hpp v1.0.0 // indirect
 	github.com/Sereal/Sereal v0.0.0-20190618215532-0b8ac451a863 // indirect
 	github.com/asdine/storm v2.1.2+incompatible
@@ -16,6 +17,7 @@ require (
 	github.com/smartystreets/goconvey v1.6.4 // indirect
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/viper v1.3.2
+	github.com/thoas/go-funk v0.7.0
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/yudai/pp v2.0.1+incompatible // indirect
 	go.etcd.io/bbolt v1.3.5

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"io"
 	"os"
 
 	"github.com/qwqcode/qwquiver/config"
@@ -56,7 +57,8 @@ func initConfig() {
 func initLog() {
 	// 初始化日志
 	if file, err := os.OpenFile(config.Instance.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666); err == nil {
-		logrus.SetOutput(file)
+		mw := io.MultiWriter(os.Stdout, file) // Both Stdout and file
+		logrus.SetOutput(mw)
 	} else {
 		logrus.Error(err)
 	}

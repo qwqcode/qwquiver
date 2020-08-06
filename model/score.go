@@ -2,38 +2,54 @@ package model
 
 // Score 成绩模型
 type Score struct {
-	ID     int    `storm:"id,increment"` // 编号
-	Name   string `storm:"index"`        // 姓名
-	Code   string `storm:"index"`        // 考号
-	School string `storm:"index"`        // 学校
-	Class  string `storm:"index"`        // 班级
-	Type   int    `storm:"index"`        // 类型
-	Total  int    // 总分
-	Rank   int    // 排名
+	ID     int     `storm:"id,increment"` // 编号
+	Name   string  `storm:"index"`        // 姓名
+	Code   string  `storm:"index"`        // 考号
+	School string  `storm:"index"`        // 学校
+	Class  string  `storm:"index"`        // 班级
+	Type   int     `storm:"index"`        // 类型
+	Total  float64 // 总分
+	Rank   float64 // 排名
 
-	YW int // 语文
-	SX int // 数学
-	YY int // 英语
+	YW float64 // 语文
+	SX float64 // 数学
+	YY float64 // 英语
 
-	WL int // 物理
-	HX int // 化学
-	SW int // 生物
+	WL float64 // 物理
+	HX float64 // 化学
+	SW float64 // 生物
 
-	ZZ int // 政治
-	LS int // 历史
-	DL int // 地理
+	ZZ float64 // 政治
+	LS float64 // 历史
+	DL float64 // 地理
 
-	LZ int // 理综 (物+化+生)
-	WZ int // 文综 (政+历+地)
+	LZ float64 // 理综 (物+化+生)
+	WZ float64 // 文综 (政+历+地)
 
-	ZK int // 主科 (语+数+英)
-	LK int // 理科 (语数英+理综)
-	WK int // 文科 (语数英+理综)
+	ZK float64 // 主科 (语+数+英)
+	LK float64 // 理科 (语数英+理综)
+	WK float64 // 文科 (语数英+理综)
 
-	ZKRank int // 主排
-	LKRank int // 理排
-	WKRank int // 文排
+	ZKRank float64 // 主排
+	LKRank float64 // 理排
+	WKRank float64 // 文排
 
-	LZRank int // 理综排
-	WZRank int // 文综排
+	LZRank float64 // 理综排
+	WZRank float64 // 文综排
+}
+
+// ScoreFieldTransMap 字段名 => 中文名
+var ScoreFieldTransMap map[string]string = map[string]string{
+	"ID": "编号", "Name": "姓名", "Code": "考号", "School": "学校",
+	"Class": "班级", "Type": "类型", "Total": "总分", "Rank": "排名",
+
+	"YW": "语文", "SX": "数学", "YY": "英语",
+	"WL": "物理", "HX": "化学", "SW": "生物",
+	"ZZ": "政治", "LS": "历史", "DL": "地理",
+
+	"LZ": "理综", "WZ": "文综",
+	"ZK": "主科", "LK": "理科", "WK": "文科",
+
+	"ZKRank": "主排", "LKRank": "理排", "WKRank": "文排",
+	"LZRank": "理综排", "WZRank": "文综排",
 }

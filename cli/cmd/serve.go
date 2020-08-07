@@ -24,6 +24,4 @@ func init() {
 	flagPV(serveCmd, "name", "n", "qwquiver", "网站标题")
 	flagPV(serveCmd, "address", "a", "", "网站地址 (例如: qwqaq.com)")
 	flagPV(serveCmd, "port", "p", 8087, "网站端口")
-	flagPV(serveCmd, "dbFile", "d", "./data/qwquiver.db", "数据文件")
-	flagPV(serveCmd, "logFile", "l", "./data/qwquiver.log", "日志文件")
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 
 	"github.com/qwqcode/qwquiver/config"
+	"github.com/qwqcode/qwquiver/lib"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	v "github.com/spf13/viper"
@@ -45,7 +46,10 @@ func Execute() {
 func init() {
 	cobra.OnInitialize(initConfig)
 	cobra.OnInitialize(initLog)
+	cobra.OnInitialize(initDB)
 
+	flagPV(rootCmd, "dbFile", "d", "./data/qwquiver.db", "数据文件")
+	flagPV(rootCmd, "logFile", "l", "./data/qwquiver.log", "日志文件")
 	rootCmd.SetVersionTemplate("qwquiver {{printf \"version %s\" .Version}}\n")
 	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "配置文件 (defaults are './.qwquiver', '$HOME/.qwquiver' or '/etc/qwquiver/.qwquiver')")
 }
@@ -62,6 +66,10 @@ func initLog() {
 	} else {
 		logrus.Error(err)
 	}
+}
+
+func initDB() {
+	lib.OpenDb(config.Instance.DbFile)
 }
 
 //// 捷径函数 ////

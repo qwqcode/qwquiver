@@ -9,7 +9,7 @@ type Score struct {
 	Class  string  `storm:"index"`        // 班级
 	Type   int     `storm:"index"`        // 类型
 	Total  float64 // 总分
-	Rank   float64 // 排名
+	Rank   int     // 排名
 
 	YW float64 // 语文
 	SX float64 // 数学
@@ -30,12 +30,12 @@ type Score struct {
 	LK float64 // 理科 (语数英+理综)
 	WK float64 // 文科 (语数英+理综)
 
-	ZKRank float64 // 主排
-	LKRank float64 // 理排
-	WKRank float64 // 文排
+	ZKRank int // 主排
+	LKRank int // 理排
+	WKRank int // 文排
 
-	LZRank float64 // 理综排
-	WZRank float64 // 文综排
+	LZRank int // 理综排
+	WZRank int // 文综排
 }
 
 // ScoreFieldTransMap 字段名 => 中文名

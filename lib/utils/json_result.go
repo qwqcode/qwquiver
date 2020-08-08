@@ -8,6 +8,15 @@ type JSONResult struct {
 	Data    interface{} `json:"data"`    // 数据
 }
 
+// PageResult JSON 分页数据结构体
+type PageResult struct {
+	Page     int           `json:"page"`
+	PageSize int           `json:"pageSize"`
+	Total    int           `json:"total"`
+	LastPage int           `json:"lastPage"`
+	List     []interface{} `json:"list"`
+}
+
 // JSON is normal json result
 func JSON(code int, msg string, data interface{}, success bool) *JSONResult {
 	return &JSONResult{
@@ -20,6 +29,15 @@ func JSON(code int, msg string, data interface{}, success bool) *JSONResult {
 
 // JSONData is just response data
 func JSONData(data interface{}) *JSONResult {
+	return &JSONResult{
+		Success: true,
+		Code:    RespCodeOK,
+		Data:    data,
+	}
+}
+
+// JSONPageData is 响应 json 分页数据
+func JSONPageData(data *PageResult) *JSONResult {
 	return &JSONResult{
 		Success: true,
 		Code:    RespCodeOK,

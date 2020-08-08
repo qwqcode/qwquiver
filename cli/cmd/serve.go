@@ -9,7 +9,7 @@ var serveCmd = &cobra.Command{
 	Use:     "serve",
 	Version: rootCmd.Version,
 	Aliases: []string{"server"},
-	Short:   "启动 WEB 服务器",
+	Short:   "启动服务器",
 	Long:    rootCmd.Long,
 	Run: func(cmd *cobra.Command, args []string) {
 		app.RunIris()

@@ -15,7 +15,7 @@ var examCmd = &cobra.Command{
 	Use:     "exam [command]",
 	Version: rootCmd.Version,
 	Aliases: []string{},
-	Short:   "考试管理工具",
+	Short:   "考试管理",
 	Long:    `qwquiver 的考试数据管理工具`,
 	Args:    cobra.NoArgs,
 }

@@ -15,7 +15,7 @@ var importCmd = &cobra.Command{
 	Use:     "import [Excel 文件路径]",
 	Version: rootCmd.Version,
 	Aliases: []string{"excel"},
-	Short:   "数据导入工具",
+	Short:   "数据导入",
 	Long: `qwquiver 数据导入工具 - 快速导入 excel 成绩数据
 
 表头可选字段名：` + getOptionalFieldNames(),

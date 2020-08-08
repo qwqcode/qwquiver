@@ -275,6 +275,9 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	subjFullScore := TryGetFullScore()
 	for subj, fullScore := range subjFullScore {
 		if fullScore != 0 && examConf.SubjFullScore[subj] == 0 {
+			if examConf.SubjFullScore == nil {
+				examConf.SubjFullScore = map[string]float64{}
+			}
 			examConf.SubjFullScore[subj] = fullScore
 		}
 	}

@@ -12,7 +12,7 @@ var dbCmd = &cobra.Command{
 	Use:     "db [command]",
 	Version: rootCmd.Version,
 	Aliases: []string{"database"},
-	Short:   "bbolt 数据管理工具",
+	Short:   "数据库管理",
 	Long:    `qwquiver 的 bbolt 数据管理工具`,
 	Args:    cobra.NoArgs,
 }

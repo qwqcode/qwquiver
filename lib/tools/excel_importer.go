@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"encoding/json"
 	"fmt"
 	"path/filepath"
 	"reflect"
@@ -9,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/360EntSecGroup-Skylar/excelize"
+	"github.com/cheggaaa/pb"
 	"github.com/qwqcode/qwquiver/lib"
 	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
@@ -16,9 +18,11 @@ import (
 	"github.com/thoas/go-funk"
 )
 
-func ImportExcel(dataName string, filename string) {
-	dataName = strings.TrimSpace(dataName)
+// ImportExcel 数据导入
+func ImportExcel(examName string, filename string, examConfJSON string) {
+	examName = strings.TrimSpace(examName)
 	filename = strings.TrimSpace(filename)
+	var examConf *model.ExamConf
 
 	if filename == "" {
 		logrus.Error("ExcelImporter: Excel 文件路径不能为空")
@@ -30,18 +34,32 @@ func ImportExcel(dataName string, filename string) {
 		return
 	}
 
-	if dataName == "" { // 若 dataName 为空，默认使用 Excel 文件名
+	if examName == "" { // 若 examName 为空，默认使用 Excel 文件名
 		fileBasename := filepath.Base(filename)
-		dataName = strings.TrimSuffix(fileBasename, filepath.Ext(fileBasename))
+		examName = strings.TrimSuffix(fileBasename, filepath.Ext(fileBasename))
 	}
 
-	// 查询是否相同 dataName 的 bucket 已存在
-	if lib.GetIsScoreBucketExist(dataName) {
-		logrus.Error("ExcelImporter: 名称为 '" + dataName + "' 的数据表已存在，无法重复导入；您可以加上 flag: '--force' 强制覆盖数据表，或使用 'qwquiver db' 对数据库进行管理")
+	// 查询是否相同 examName 的 bucket 已存在
+	if lib.IsExamExist(examName) {
+		logrus.Error("ExcelImporter: 名称为 '" + examName + "' 的数据表已存在，无法重复导入；您可以执行 `qwquiver exam` 对现有 Exam 进行删除操作")
 		return
 	}
 
-	logrus.Info("ExcelImporter: 执行 Excel 数据导入任务，DataName='" + dataName + "', FileName='" + filename + "'")
+	// examConf 处理
+	var jExamConf model.ExamConf
+	if examConfJSON != "" {
+		if err := json.Unmarshal([]byte(examConfJSON), &jExamConf); err != nil {
+			logrus.Error("ExcelImporter: 解析 examConf JSON 发生错误 ", err)
+			return
+		}
+		examConf = &jExamConf
+	} else {
+		examConf = &model.ExamConf{}
+	}
+	examConf.Name = examName
+
+	logrus.Info("数据导入任务")
+	logrus.Info("ExamName='" + examName + "', ExcelFile='" + filename + "'")
 
 	file, err := excelize.OpenFile(filename)
 	if err != nil {
@@ -59,8 +77,8 @@ func ImportExcel(dataName string, filename string) {
 	optionalFields := utils.GetStructFields(&model.Score{})
 	optionalFieldsTr := (funk.Values(model.ScoreFieldTransMap)).([]string) // 中文字段名
 
-	fmt.Println("1", optionalFields)
-	fmt.Println("2", optionalFieldsTr)
+	logrus.Debugln("字段KEY ", optionalFields)
+	logrus.Debugln("字段名 ", optionalFieldsTr)
 
 	// 读取表头
 	for pos, name := range rows[0] {
@@ -74,7 +92,9 @@ func ImportExcel(dataName string, filename string) {
 		}
 	}
 
-	fmt.Println("3", f)
+	fmt.Println()
+	fmt.Println(" - 表头 POSITION =", f)
+	fmt.Println()
 
 	scList := &[](*model.Score){}
 
@@ -126,6 +146,10 @@ func ImportExcel(dataName string, filename string) {
 
 		*scList = append(*scList, sc)
 	}
+	logrus.Info("总分数据已生成")
+	fmt.Println()
+	fmt.Println(" - 排名执行字段 =", rankAbleFn)
+	fmt.Println()
 
 	// 生成排名数据 func
 	rank := func(scList *[]*model.Score, rankByF string, outputF string) {
@@ -177,10 +201,14 @@ func ImportExcel(dataName string, filename string) {
 		rank(scList, rankByF, rankByF+"Rank")
 	}
 
+	logrus.Info("排名数据已生成")
+
 	// 成绩从高到低排序
 	sort.Slice(*scList, func(i, j int) bool {
 		return (*scList)[i].Total > (*scList)[j].Total
 	})
+
+	logrus.Info("成绩数据排序成功")
 
 	consoleOutput := func() {
 		for _, sc := range *scList {
@@ -205,20 +233,96 @@ func ImportExcel(dataName string, filename string) {
 		consoleOutput()
 	}
 
-	// 将数据导入数据库
-	if err := lib.CreateScoreBucket(dataName); err != nil {
-		logrus.Error("ExcelImporter: 创建 ScoreBucket 发生错误 ", err)
+	// 处理附加数据
+
+	// 尝试获取每科的最高分数
+	TryGetFullScore := func() (subjFullScore map[string]float64) {
+		subjFullScore = map[string]float64{}
+		RecordOnce := func(subj string, score float64) {
+			if subj == "" || score <= 0 {
+				return
+			}
+
+			var predScore float64 = 0
+			if score > 110 {
+				predScore = 150
+			} else if score > 100 {
+				predScore = 110
+			} else if score > 90 {
+				predScore = 100
+			} else if score > 80 {
+				predScore = 90
+			} else if score > 50 {
+				predScore = 60
+			} else if score > 40 {
+				predScore = 50
+			}
+
+			if predScore > subjFullScore[subj] {
+				subjFullScore[subj] = predScore
+			}
+		}
+
+		for _, sc := range *scList {
+			for _, subj := range model.ScoreSubjF {
+				score := reflect.ValueOf(sc).Elem().FieldByName(subj).Float()
+				RecordOnce(subj, score)
+			}
+		}
+
 		return
 	}
-	bucket := lib.GetScoreBucket(dataName)
-	saveErr := []error{}
-	for _, sc := range *scList {
-		err := bucket.Save(sc)
-		if err != nil {
-			saveErr = append(saveErr, err)
+	subjFullScore := TryGetFullScore()
+	for subj, fullScore := range subjFullScore {
+		if fullScore != 0 && examConf.SubjFullScore[subj] == 0 {
+			examConf.SubjFullScore[subj] = fullScore
 		}
 	}
 
+	logrus.Info("学科最高分数已获取")
+
+	// 将数据导入数据库
+	if err := lib.CreateExam(examName); err != nil {
+		logrus.Error("ExcelImporter: 创建 ScoreBucket 发生错误 ", err)
+		return
+	}
+
+	// 保存 Exam 配置
+	if err := lib.SaveExamConf(examConf); err != nil {
+		logrus.Error("ExcelImporter: 写入 ExamConf 发生错误 ", err)
+		return
+	}
+	logrus.Info("ExamConf 已成功写入")
+
+	// 准备开始一个 transaction
+	bucket := lib.GetExam(examName)
+	tx, err := bucket.Begin(true) // https://github.com/asdine/storm#transactions
+	if err != nil {
+		logrus.Error("ExcelImporter: 准备 transaction 操作时发生错误 ", err)
+	}
+	defer tx.Rollback()
+
+	fmt.Print("\n")
+	bar := pb.StartNew(len(*scList))
+
+	// 开始遍历导入数据库
+	saveErr := []error{}
+	itemCount := 0
+	for _, sc := range *scList {
+		err := tx.Save(sc)
+		if err != nil {
+			saveErr = append(saveErr, err)
+		}
+		bar.Add(1)
+		itemCount++
+	}
+	tx.Commit()
+
+	bar.Finish()
+	fmt.Print("\n\n")
+	logrus.Info("成功导入 ", itemCount, " 条数据")
+
+	// 错误处理
 	if len(saveErr) > 0 {
 		logrus.Error("ExcelImporter: 保存 Score 过程中发生错误")
 		for _, err := range saveErr {
@@ -227,9 +331,19 @@ func ImportExcel(dataName string, filename string) {
 		return
 	}
 
-	// 尝试读取数据库数据
-	var queryScores []model.Score
-	lib.GetScoreBucket(dataName).All(&queryScores)
+	fmt.Print("\n\n")
+	fmt.Println("ExamConf = " + lib.GetExamConfJSONStr(examName, true))
+	fmt.Print("\n\n")
+	fmt.Println("您可以执行以下命令，对 Exam 进行修改：")
+	fmt.Println("  - 更改配置：qwquiver exam config set \"" + examName + "\" -h")
+	fmt.Println("  - 获取配置：qwquiver exam config get \"" + examName + "\" -l")
+	fmt.Println("  - 执行删除：qwquiver exam remove \"" + examName + "\" --force")
 
-	fmt.Println(len(queryScores))
+	fmt.Println()
+	logrus.Info("数据导入任务执行完毕")
+
+	// 尝试读取数据库数据
+	//var queryScores []model.Score
+	//lib.GetScoreBucket(examName).All(&queryScores)
+	// fmt.Println(len(queryScores))
 }

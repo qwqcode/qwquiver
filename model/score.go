@@ -53,3 +53,23 @@ var ScoreFieldTransMap map[string]string = map[string]string{
 	"ZKRank": "主排", "LKRank": "理排", "WKRank": "文排",
 	"LZRank": "理综排", "WZRank": "文综排",
 }
+
+// ScoreSubjF 所有学科字段名
+var ScoreSubjF []string = []string{
+	"YW", "SX", "YY", "WL", "HX", "SW", "ZZ", "LS", "DL",
+}
+
+// ScoreSubjFZK 所有主要科目字段名
+var ScoreSubjFZK []string = []string{
+	"YW", "SX", "YY",
+}
+
+// ScoreSubjFLK 所有理科字段名
+var ScoreSubjFLK []string = []string{
+	"WL", "HX", "SW",
+}
+
+// ScoreSubjFWK 所有文科字段名
+var ScoreSubjFWK []string = []string{
+	"ZZ", "LS", "DL",
+}

@@ -21,16 +21,19 @@ var importCmd = &cobra.Command{
 表头可选字段名：` + getOptionalFieldNames(),
 	Run: func(cmd *cobra.Command, args []string) {
 		// 导入 Excel
-		dataName := ""      // default is "", will use filename as the dataName
+		examName := ""      // default is "", will use filename as the examName
 		if len(args) <= 1 { // be effective on importing single file
-			flagDataName, err := cmd.Flags().GetString("name") // read the flag “name”
-			if err == nil && strings.TrimSpace(flagDataName) != "" {
-				dataName = flagDataName
+			flagExamName, _ := cmd.Flags().GetString("exam-name") // read the flag “name”
+			if strings.TrimSpace(flagExamName) != "" {
+				examName = flagExamName
 			}
 		}
 
+		examConfJSON, _ := cmd.Flags().GetString("exam-conf")
+
+		// 导入多个文件
 		for _, filename := range args {
-			tools.ImportExcel(dataName, filename)
+			tools.ImportExcel(examName, filename, examConfJSON)
 		}
 	},
 	Args: cobra.MinimumNArgs(1),
@@ -39,7 +42,8 @@ var importCmd = &cobra.Command{
 func init() {
 	rootCmd.AddCommand(importCmd)
 
-	flagP(importCmd, "name", "n", "", "数据名")
+	flagP(importCmd, "exam-name", "n", "", "Exam 名称")
+	flagP(importCmd, "exam-conf", "c", "", "Exam 配置 (JSON格式)")
 }
 
 func getOptionalFieldNames() (s string) {

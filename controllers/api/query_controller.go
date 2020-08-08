@@ -13,7 +13,7 @@ type QueryController struct {
 
 func (c *QueryController) Get() *utils.JSONResult {
 	classes := []string{}
-	lib.FilterScoresRegStr("233", "林").Each(new(model.Score), func(record interface{}) error {
+	lib.FilterScoresByRegStr("23333", "林").Each(new(model.Score), func(record interface{}) error {
 		u := record.(*model.Score)
 		classes = append(classes, u.Name)
 		return nil

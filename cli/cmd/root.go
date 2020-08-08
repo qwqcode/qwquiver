@@ -1,14 +1,15 @@
 package cmd
 
 import (
-	"io"
 	"os"
 
 	"github.com/qwqcode/qwquiver/config"
 	"github.com/qwqcode/qwquiver/lib"
+	"github.com/rifflock/lfshook"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	v "github.com/spf13/viper"
+	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
 var (
@@ -17,7 +18,7 @@ var (
 	rootCmd = &cobra.Command{
 		Use:   "qwquiver",
 		Short: "A web-based exam results explorer.",
-		Long: `      
+		Long: `
     ____ __      ______ ___  __(_)   _____  _____
    / __  / | /| / / __  / / / / / | / / _ \/ ___/
   / /_/ /| |/ |/ / /_/ / /_/ / /| |/ /  __/ /    
@@ -29,9 +30,9 @@ A website for exploring and analyzing exam results.
 More detail on https://github.com/qwqcode/qwquiver
 
 (c) 2020 qwqaq.com`,
-		Run: func(cmd *cobra.Command, args []string) {
+		/* Run: func(cmd *cobra.Command, args []string) {
 			// Do Stuff Here
-		},
+		} */
 	}
 )
 
@@ -48,10 +49,10 @@ func init() {
 	cobra.OnInitialize(initLog)
 	cobra.OnInitialize(initDB)
 
-	flagPV(rootCmd, "dbFile", "d", "./data/qwquiver.db", "数据文件")
-	flagPV(rootCmd, "logFile", "l", "./data/qwquiver.log", "日志文件")
+	flagV(rootCmd, "dbFile", "./data/qwquiver.db", "数据文件路径")
+	flagV(rootCmd, "logFile", "./data/qwquiver.log", "日志文件路径")
 	rootCmd.SetVersionTemplate("qwquiver {{printf \"version %s\" .Version}}\n")
-	rootCmd.PersistentFlags().StringVarP(&cfgFile, "config", "c", "", "配置文件 (defaults are './.qwquiver', '$HOME/.qwquiver' or '/etc/qwquiver/.qwquiver')")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "配置文件路径 (defaults are './.qwquiver', '$HOME/.qwquiver' or '/etc/qwquiver/.qwquiver')")
 }
 
 func initConfig() {
@@ -60,12 +61,34 @@ func initConfig() {
 
 func initLog() {
 	// 初始化日志
-	if file, err := os.OpenFile(config.Instance.LogFile, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666); err == nil {
-		mw := io.MultiWriter(os.Stdout, file) // Both Stdout and file
-		logrus.SetOutput(mw)
-	} else {
-		logrus.Error(err)
+	stdFormatter := &prefixed.TextFormatter{
+		DisableTimestamp: true,
+		ForceFormatting:  true,
+		ForceColors:      true,
+		DisableColors:    false,
+	} // 命令行输出格式
+	fileFormatter := &prefixed.TextFormatter{
+		FullTimestamp:   true,
+		TimestampFormat: "2006-01-02.15:04:05.000000",
+		ForceFormatting: true,
+		ForceColors:     false,
+		DisableColors:   true,
+	} // 文件输出格式
+
+	// logrus.SetLevel(logrus.DebugLevel)
+	logrus.SetFormatter(stdFormatter)
+	logrus.SetOutput(os.Stdout)
+
+	// 文件保存
+	pathMap := lfshook.PathMap{
+		logrus.InfoLevel:  config.Instance.LogFile,
+		logrus.DebugLevel: config.Instance.LogFile,
+		logrus.ErrorLevel: config.Instance.LogFile,
 	}
+	logrus.AddHook(lfshook.NewHook(
+		pathMap,
+		fileFormatter,
+	))
 }
 
 func initDB() {

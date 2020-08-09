@@ -60,6 +60,7 @@ func init() {
 	}
 	flag(configSetCmd, "grp", "", "修改 Exam Grp")
 	flag(configSetCmd, "label", "", "修改 Exam Label")
+	flag(configSetCmd, "subj", "", "修改 Exam Subj (JSON格式)")
 	flag(configSetCmd, "subj-full-score", "", "修改 Exam SubjFullScore (JSON格式)")
 	flag(configSetCmd, "date", "", "修改 Exam Date")
 	flag(configSetCmd, "note", "", "修改 Exam Note")
@@ -131,13 +132,22 @@ func cmdExamConfigSetRun(cmd *cobra.Command, args []string) {
 		if label, _ := cmd.Flags().GetString("label"); label != "" {
 			examConf.Label = label
 		}
+		if subjStr, _ := cmd.Flags().GetString("subj"); subjStr != "" {
+			var subjList []string
+			err := json.Unmarshal([]byte(subjStr), &subjList)
+			if err == nil && subjList != nil {
+				examConf.Subj = subjList
+			} else {
+				logrus.Error("尝试解析 flag '--subj' 的 JSON 数据时发生错误 ", err)
+			}
+		}
 		if sfc, _ := cmd.Flags().GetString("subj-full-score"); sfc != "" {
 			var subjFullScore map[string]float64
 			err := json.Unmarshal([]byte(sfc), &subjFullScore)
 			if err == nil && subjFullScore != nil {
 				examConf.SubjFullScore = subjFullScore
 			} else {
-				logrus.Error("尝试解析 flag '-subj-full-score' 的 JSON 数据时发生错误 ", err)
+				logrus.Error("尝试解析 flag '--subj-full-score' 的 JSON 数据时发生错误 ", err)
 			}
 		}
 		if date, _ := cmd.Flags().GetString("date"); date != "" {
@@ -146,7 +156,7 @@ func cmdExamConfigSetRun(cmd *cobra.Command, args []string) {
 		if note, _ := cmd.Flags().GetString("note"); note != "" {
 			examConf.Note = note
 		}
-		// TODO ... 比较 dirty 的代码，先将就
+		// TODO ... 比较 dirty 的代码，先将就这样
 		lib.SaveExamConf(examConf)
 	}
 

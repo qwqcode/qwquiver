@@ -7,7 +7,6 @@ type Score struct {
 	Code   string  `storm:"index"`        // 考号
 	School string  `storm:"index"`        // 学校
 	Class  string  `storm:"index"`        // 班级
-	Type   int     `storm:"index"`        // 类型
 	Total  float64 // 总分
 	Rank   int     // 排名
 
@@ -41,7 +40,7 @@ type Score struct {
 // ScoreFieldTransMap 字段名 => 中文名
 var ScoreFieldTransMap map[string]string = map[string]string{
 	"ID": "编号", "Name": "姓名", "Code": "考号", "School": "学校",
-	"Class": "班级", "Type": "类型", "Total": "总分", "Rank": "排名",
+	"Class": "班级", "Total": "总分", "Rank": "排名",
 
 	"YW": "语文", "SX": "数学", "YY": "英语",
 	"WL": "物理", "HX": "化学", "SW": "生物",
@@ -54,22 +53,20 @@ var ScoreFieldTransMap map[string]string = map[string]string{
 	"LZRank": "理综排", "WZRank": "文综排",
 }
 
-// ScoreSubjF 所有学科字段名
-var ScoreSubjF []string = []string{
-	"YW", "SX", "YY", "WL", "HX", "SW", "ZZ", "LS", "DL",
-}
+// SFieldSubj 所有学科字段名
+var SFieldSubj []string = []string{"YW", "SX", "YY", "WL", "HX", "SW", "ZZ", "LS", "DL"}
 
-// ScoreSubjFZK 所有主要科目字段名
-var ScoreSubjFZK []string = []string{
-	"YW", "SX", "YY",
-}
+// SFieldSubjZK 所有主要科目字段名
+var SFieldSubjZK []string = []string{"YW", "SX", "YY"}
 
-// ScoreSubjFLK 所有理科字段名
-var ScoreSubjFLK []string = []string{
-	"WL", "HX", "SW",
-}
+// SFieldSubjLK 所有理科字段名
+var SFieldSubjLK []string = []string{"WL", "HX", "SW"}
 
-// ScoreSubjFWK 所有文科字段名
-var ScoreSubjFWK []string = []string{
-	"ZZ", "LS", "DL",
-}
+// SFieldSubjWK 所有文科字段名
+var SFieldSubjWK []string = []string{"ZZ", "LS", "DL"}
+
+// SFieldExtRank 拓展排名字段
+var SFieldExtRank []string = []string{"ZKRank", "LKRank", "WKRank", "LZRank", "WZRank"}
+
+// SFieldExtSum 拓展求和字段
+var SFieldExtSum []string = []string{"ZK", "LZ", "WZ", "LK", "WK"}

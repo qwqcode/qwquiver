@@ -73,27 +73,38 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		return
 	}
 
-	f := map[string]int{}
 	optionalFields := utils.GetStructFields(&model.Score{})
 	optionalFieldsTr := (funk.Values(model.ScoreFieldTransMap)).([]string) // 中文字段名
 
 	logrus.Debugln("字段KEY ", optionalFields)
 	logrus.Debugln("字段名 ", optionalFieldsTr)
 
+	fmt.Println()
+	fmt.Println(" - 表头 =", rows[0])
+
 	// 读取表头
-	for pos, name := range rows[0] {
-		if funk.ContainsString(optionalFields, name) {
-			f[name] = pos
-		} else if funk.ContainsString(optionalFieldsTr, name) {
-			name, _ := funk.FindKey(model.ScoreFieldTransMap, func(trN string) bool {
-				return trN == name
+	fieldPos := map[string]int{} // 字段名 => Position
+	fieldList := []string{}      // 所有字段
+	for pos, val := range rows[0] {
+		if funk.ContainsString(optionalFields, val) {
+			fieldPos[val] = pos
+			fieldList = append(fieldList, val)
+		} else if funk.ContainsString(optionalFieldsTr, val) {
+			// 若表头为中文名，则先翻译为原始字段名
+			val, _ := funk.FindKey(model.ScoreFieldTransMap, func(trN string) bool {
+				return trN == val
 			})
-			f[name.(string)] = pos
+			if val != "" {
+				fieldPos[val.(string)] = pos
+				fieldList = append(fieldList, val.(string))
+			}
 		}
 	}
+	subjList := funk.IntersectString(fieldList, model.SFieldSubj) // 考试科目
+	examConf.Subj = subjList
 
-	fmt.Println()
-	fmt.Println(" - 表头 POSITION =", f)
+	fmt.Println(" - 表头 POSITION =", fieldPos)
+	fmt.Println(" - 考试科目 =", subjList)
 	fmt.Println()
 
 	scList := &[](*model.Score){}
@@ -103,7 +114,8 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	for _, row := range rows[1:] {
 		sc := &model.Score{}
 
-		for name, pos := range f {
+		for name, pos := range fieldPos {
+			// 将表格值添加到 sc 中
 			rf := reflect.ValueOf(sc).Elem().FieldByName(name)
 			switch reflect.ValueOf(model.Score{}).FieldByName(name).Kind() {
 			case reflect.String:
@@ -264,7 +276,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		}
 
 		for _, sc := range *scList {
-			for _, subj := range model.ScoreSubjF {
+			for _, subj := range model.SFieldSubj {
 				score := reflect.ValueOf(sc).Elem().FieldByName(subj).Float()
 				RecordOnce(subj, score)
 			}
@@ -273,11 +285,11 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		return
 	}
 	subjFullScore := TryGetFullScore()
+	if examConf.SubjFullScore == nil {
+		examConf.SubjFullScore = map[string]float64{}
+	}
 	for subj, fullScore := range subjFullScore {
 		if fullScore != 0 && examConf.SubjFullScore[subj] == 0 {
-			if examConf.SubjFullScore == nil {
-				examConf.SubjFullScore = map[string]float64{}
-			}
 			examConf.SubjFullScore[subj] = fullScore
 		}
 	}
@@ -335,11 +347,11 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	}
 
 	fmt.Print("\n\n")
-	fmt.Println("ExamConf = " + lib.GetExamConfJSONStr(examName, true))
+	fmt.Println("ExamConf = '" + lib.GetExamConfJSONStr(examName, false) + "'")
 	fmt.Print("\n\n")
 	fmt.Println("您可以执行以下命令，对 Exam 进行修改：")
 	fmt.Println("  - 更改配置：qwquiver exam config set \"" + examName + "\" -h")
-	fmt.Println("  - 获取配置：qwquiver exam config get \"" + examName + "\" -l")
+	fmt.Println("  - 获取配置：qwquiver exam config get \"" + examName + "\" -i")
 	fmt.Println("  - 执行删除：qwquiver exam remove \"" + examName + "\" --force")
 
 	fmt.Println()

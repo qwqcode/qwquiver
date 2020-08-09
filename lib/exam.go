@@ -97,6 +97,55 @@ func GetExamConf(name string) *model.ExamConf {
 	return &conf
 }
 
+// GetAllExamConf 获取所有 Exam 的 ExamConf
+func GetAllExamConf() (examConfList []model.ExamConf) {
+	examConfList = []model.ExamConf{}
+	for _, examName := range GetAllExamNames() {
+		examConf := GetExamConf(examName)
+		if examConf != nil {
+			examConfList = append(examConfList, *examConf)
+		}
+	}
+	return
+}
+
+// GetAllExamGrps 获取所有已存在的 Grp
+func GetAllExamGrps() (examGrpList []string) {
+	examGrpList = []string{}
+	for _, examName := range GetAllExamNames() {
+		examConf := GetExamConf(examName)
+		if examConf != nil && examConf.Grp != "" {
+			if !funk.ContainsString(examGrpList, examConf.Grp) {
+				examGrpList = append(examGrpList, examConf.Grp) // 追加不重复的 Grp
+			}
+		}
+	}
+	return
+}
+
+// ExamBean a bean for storing Exam's information
+type ExamBean struct {
+	Name string
+	Data storm.Node
+	Conf *model.ExamConf
+}
+
+// GetExamsByGrp 获取指定 Grp 的所有 Exam
+func GetExamsByGrp(grp string) (exams []ExamBean) {
+	exams = []ExamBean{}
+	for _, examName := range GetAllExamNames() {
+		examConf := GetExamConf(examName)
+		if examConf != nil && examConf.Grp == grp {
+			exams = append(exams, ExamBean{
+				Name: examName,
+				Data: GetExam(examName),
+				Conf: examConf,
+			})
+		}
+	}
+	return
+}
+
 // GetExamConfJSONStr 获取考试配置数据 JSON 字符串，beauty=是否格式化JSON
 func GetExamConfJSONStr(name string, beauty bool) string {
 	examConf := GetExamConf(name)
@@ -139,17 +188,18 @@ func UpdateExamConf(examConf *model.ExamConf) error {
 // UpdateExamConfByJSON 修改考试配置，通过 JSON 数据
 func UpdateExamConfByJSON(examConf *model.ExamConf, jsonStr string) error {
 	var nExamConf model.ExamConf
-	// testData := []byte(`{"Name":"测试","Grp":"233","Label":"233","SubjFullScore":{"DL":100},"Date":"dd","Note":"ww"}`)
+	// testData := []byte(`{"Name":"测试","Grp":"233","Label":"233","Subj":["DL"],"SubjFullScore":{"DL":100},"Date":"dd","Note":"ww"}`)
 	if err := json.Unmarshal([]byte(jsonStr), &nExamConf); err != nil {
 		return err
 	}
 
 	examConf.Grp = nExamConf.Grp
 	examConf.Label = nExamConf.Label
+	examConf.Subj = nExamConf.Subj
 	examConf.SubjFullScore = nExamConf.SubjFullScore
 	examConf.Date = nExamConf.Date
 	examConf.Note = nExamConf.Note
-	// TODO ... 比较 dirty 的代码，先将就
+	// TODO ... 比较 dirty 的代码，不够 flexible，先将就这样
 
 	return UpdateExamConf(examConf)
 }

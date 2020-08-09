@@ -1,0 +1,352 @@
+:root {
+  --mainColor: #32c787;
+}
+
+html, body {
+  height: 100%;
+  font-family: Roboto, "Helvetica Neue", "PingFangSC-Light", "Hiragino Sans GB", "Microsoft YaHei", "WenQuanYi Micro Hei", sans-serif;
+  background-color: #f2f4fa;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.42857143;
+  color: #5E5E5E;
+  overflow-x: hidden
+}
+
+* {
+  -webkit-box-sizing: border-box;
+  -moz-box-sizing: border-box;
+  box-sizing: border-box;
+}
+
+dl, h1, h2, h3, h4, h5, h6, ol, p, ul {
+  margin-top: 0;
+}
+
+a {
+  color: #4B96D6;
+  text-decoration: none !important;
+  transition: all 0.2s ease-in-out;
+}
+
+/* anim */
+.anim-fade-in {
+  animation: .3s fadeIn both;
+}
+
+.anim-fade-out {
+  animation-duration: .2s fadeIn both;
+}
+
+.anim-flash {
+  animation-name: flash
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0 }
+  to { opacity: 1 }
+}
+
+@keyframes fadeOut {
+  100% { opacity: 0 }
+  0% {}
+}
+
+@keyframes flash {
+  0%, 50%, to { opacity: 1 }
+  25%, 75% { opacity: 0 }
+}
+
+/* WRAP */
+.show-top-badge:before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  background-color: #ff605c;
+  color: #FFF;
+  border-radius: 50%;
+  position: absolute;
+  top: -1px;
+  left: -1px;
+  margin: auto;
+  animation-name: flash;
+  animation-duration: 2s;
+  animation-fill-mode: both;
+  animation-iteration-count: infinite;
+}
+
+@keyframes flash {
+  0%,50%,to {
+      opacity: 1
+  }
+
+  25%,75% {
+      opacity: 0
+  }
+}
+
+.mini-scrollbar {
+  & > ::-webkit-scrollbar {
+    width: 5px
+  }
+
+  & > ::-webkit-scrollbar-track {
+    background: hsla(0,0%,66%,.14)
+  }
+
+  & > ::-webkit-scrollbar-thumb {
+    background: rgb(197, 197, 197)
+  }
+
+  & > ::-webkit-scrollbar-thumb:hover {
+    background: rgb(146, 146, 146)
+  }
+}
+
+.print-only {
+  display: none;
+
+  @media print {
+    display: initial !important;
+  }
+}
+
+.wrap {
+  min-height: 100%;
+  height: auto;
+  margin: 0 auto;
+  padding: 0;
+  transition: filter 0.15s ease-in-out;
+
+  & > .container {
+    padding: 70px 15px 20px;
+  }
+
+  .main-cont-area {
+    $gutter: 15px;
+    position: relative;
+    padding-left: 230px + $gutter;
+    padding-right: $gutter;
+    padding-top: 55px + $gutter;
+    padding-bottom: $gutter;
+
+    @include mq(wide) {
+      padding-left: 255px + $gutter;
+    }
+
+    @include mq(mobile, tablet) {
+      padding-left: 0;
+      padding-right: 0;
+      padding-top: 55px;
+      padding-bottom: 0;
+    }
+
+    &.full {
+      padding-left: $gutter;
+
+      @include mq(mobile, tablet) {
+        padding-left: 0;
+      }
+    }
+  }
+}
+
+/* Card */
+.card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: #FFF;
+  border: 0;
+  border-radius: 2px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.075);
+  margin-bottom: 0;
+
+  a {
+    font-size: .98rem;
+    color: #333;
+    font-weight: 500;
+
+    &:hover {
+      text-decoration: none;
+      color: #4d4d4d
+    }
+
+    &:focus {
+      outline: none;
+    }
+  }
+
+  img {
+    border-radius: 2px
+  }
+
+  blockquote {
+    padding: 0;
+    margin-bottom: 0;
+    border-left: 0
+  }
+}
+
+.card-fullscreen {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 9;
+  /* padding-top: 55px; */
+  overflow: auto;
+}
+
+.card-header {
+  border-bottom: 1px solid transparent;
+  position: relative;
+
+  &:first-child {
+    border-radius: 2px 2px 0 0;
+  }
+
+  .actions {
+    float: right;
+    right: 15px;
+    z-index: 2;
+    top: 18px;
+
+    @include mq(mobile, tablet) {
+      position: absolute;
+      bottom: 0;
+      right: 0;
+      background: rgba(255, 255, 255, 0.76);
+      padding: 0 10px 0 15px;
+    }
+
+    .item {
+      color: #707070;
+      user-select: none;
+      line-height: 30px;
+      text-align: center;
+      cursor: pointer;
+      transition: color .3s;
+      height: 30px;
+      display: inline-block;
+      font-size: 15px;
+      position: relative;
+
+      &:not(:last-child) {
+        margin-right: 20px;
+      }
+
+      &:hover, &.active {
+        color: var(--mainColor);
+      }
+
+      & > i {
+        display: inline-block;
+        margin-right: 2px;
+        width: 15px;
+      }
+
+      @include mq(mobile, tablet) {
+        & > span {
+          display: none;
+        }
+
+        &:not(:last-child) {
+          margin-right: 5px;
+        }
+
+        &:hover {
+          color: #707070;
+        }
+      }
+    }
+  }
+}
+
+.card-title {
+  font-size: 1.25rem;
+  font-weight: 400;
+  margin-bottom: 0;
+  display: inline-block;
+
+  @include mq(mobile, tablet) {
+    font-size: 13px;
+    display: block;
+  }
+}
+
+.card-subtitle {
+  color: #9c9c9c;
+  display: inline-block;
+  font-size: 13px;
+  vertical-align: baseline;
+  margin-left: 10px;
+  border-left: 1px solid #EEE;
+  padding-left: 10px;
+
+  @include mq(mobile, tablet) {
+    font-size: 12px;
+    border-left: 0;
+    margin-left: 0;
+    padding-left: 0;
+  }
+}
+
+.card-primary {
+  background-color: #2196F3;
+}
+
+.card-success {
+  background-color: #1a73e8;
+}
+
+.card-info {
+  background-color: #00BCD4;
+}
+
+.card-warning {
+  background-color: #ffc107;
+}
+
+.card-block {
+  flex: 1 1 auto;
+  padding: 2.1rem;
+
+  @include mq(mobile, tablet) {
+    padding: 20px 15px;
+  }
+
+  p:only-child {
+    margin-bottom: 0
+  }
+
+  .card-block-title {
+    font-size: 1.1rem;
+    color: #333;
+    margin-bottom: .6rem;
+    font-weight: 400
+  }
+}
+
+.card-footer {
+  border-top: 1px solid transparent;
+
+  &:last-child {
+    border-radius: 0 0 2px 2px
+  }
+
+
+  .card-footer-highlight {
+    background-color: #f9f9f9
+  }
+}
+
+.card-footer, .card-header {
+  padding: 2rem 2.1rem;
+  background-color: transparent;
+
+  @include mq(mobile, tablet) {
+    padding: 20px 15px 0 15px;
+  }
+}

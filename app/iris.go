@@ -8,6 +8,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/qwqcode/qwquiver/bindata"
 	"github.com/qwqcode/qwquiver/config"
 	"github.com/qwqcode/qwquiver/controllers/api"
 	"github.com/qwqcode/qwquiver/lib"
@@ -40,14 +41,17 @@ func RunIris() {
 		}
 	})
 
-	app.Any("/", func(i iris.Context) {
-		_, _ = i.HTML("<h1>Powered by qwquiver</h1>")
-	})
+	// app.Any("/", func(i iris.Context) {
+	// 	_, _ = i.HTML("<h1>Powered by qwquiver</h1>")
+	// })
+	app.HandleDir("/", bindata.AssetFile())
 
 	// api
-	mvc.Configure(app.Party("/api/v1"), func(m *mvc.Application) {
-		m.Party("/config").Handle(new(api.ConfigController))
+	mvc.Configure(app.Party("/api"), func(m *mvc.Application) {
+		m.Party("/conf").Handle(new(api.ConfController))
 		m.Party("/query").Handle(new(api.QueryController))
+		m.Party("/school").Handle(new(api.SchoolController))
+		m.Party("/chart").Handle(new(api.ChartController))
 	})
 
 	// admin

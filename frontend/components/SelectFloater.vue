@@ -6,7 +6,7 @@
         :key="key"
         class="option"
         :class="{ 'selected': !!selected && selected === key }"
-        @click="setVal(key)">{{ val }}</div>
+        @click="setVal(key)">{{ val||key }}</div>
     </div>
   </transition>
 </template>

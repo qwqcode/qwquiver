@@ -56,9 +56,9 @@ func (c *QueryController) Get() *utils.JSONResult {
 	examConf := lib.GetExamConf(examName)
 
 	// JSON 解析
-	var condList map[string]interface{}
+	var condList map[string]string
 	var sortList map[string]int
-	if whereJSONStr != "" {
+	if whereJSONStr != "" { // Note: json 不允许出现 Number 类型的 Value (eg.{"Class":1} 必须为 {"Class":"1"})
 		if err := json.Unmarshal([]byte(whereJSONStr), &condList); err != nil {
 			return utils.JSONError(utils.RespCodeErr, "where 参数 JSON 解析失败")
 		}
@@ -75,9 +75,9 @@ func (c *QueryController) Get() *utils.JSONResult {
 		// 全部数据
 		query = exam.Select()
 	} else {
-		if len(condList) == 1 && condList["Name"] != "" {
+		if len(condList) == 1 && condList["NAME"] != "" {
 			// 模糊查询
-			query = lib.FilterScoresByRegStr(exam, condList["Name"].(string))
+			query = lib.FilterScoresByRegStr(exam, condList["NAME"])
 		} else {
 			// 精确查询
 			query = lib.FilterScores(exam, condList, false)
@@ -88,17 +88,17 @@ func (c *QueryController) Get() *utils.JSONResult {
 	dataDesc := ""
 	if condList == nil {
 		dataDesc = "全部考生成绩"
-	} else if len(condList) == 1 && condList["Name"] != "" {
-		dataDesc = fmt.Sprintf(`数据满足 “%s” 的考生成绩`, condList["Name"])
-	} else if condList["Class"] == "" && condList["School"] != "" {
-		dataDesc = fmt.Sprintf(`%s · 全校成绩`, condList["School"])
-	} else if condList["Class"] != "" && condList["School"] != "" {
-		dataDesc = fmt.Sprintf(`%s %s · 班级成绩`, condList["School"], condList["Class"])
+	} else if len(condList) == 1 && condList["NAME"] != "" {
+		dataDesc = fmt.Sprintf(`数据满足 “%s” 的考生成绩`, condList["NAME"])
+	} else if condList["CLASS"] == "" && condList["SCHOOL"] != "" {
+		dataDesc = fmt.Sprintf(`%s · 全校成绩`, condList["SCHOOL"])
+	} else if condList["CLASS"] != "" && condList["SCHOOL"] != "" {
+		dataDesc = fmt.Sprintf(`%s %s · 班级成绩`, condList["SCHOOL"], condList["CLASS"])
 	}
 
 	// 排序规则
 	if sortList == nil || len(sortList) == 0 {
-		sortList = map[string]int{"Total": -1}
+		sortList = map[string]int{"TOTAL": -1}
 	}
 	for key, t := range sortList {
 		query = query.OrderBy(key)
@@ -136,6 +136,7 @@ func (c *QueryController) Get() *utils.JSONResult {
 	scoreListAvgList := scoreListAvgList(scList, fieldList)        // 平均分
 
 	pageResult := iris.Map{
+		"examName":  examName,
 		"dataDesc":  dataDesc,
 		"page":      page,
 		"pageSize":  pageSize,
@@ -145,6 +146,8 @@ func (c *QueryController) Get() *utils.JSONResult {
 		"list":      scListPaginated,
 		"examConf":  examConf,
 		"avgList":   scoreListAvgList,
+		"sortList":  sortList,
+		"condList":  condList,
 	}
 
 	if initConf != nil {
@@ -175,7 +178,7 @@ func scoreListAvgList(scList []model.Score, fieldList []string) map[string]float
 
 	for _, f := range funk.IntersectString(avgFields, fieldList) {
 		scores := funk.Map(scList, func(sc model.Score) float64 {
-			num, err := reflections.GetField(&sc, f)
+			num, err := reflections.GetField(sc, f)
 			if err != nil {
 				return 0
 			}
@@ -215,28 +218,13 @@ func getScoresFieldList(examConf model.ExamConf, scoreList []model.Score) (field
 
 	for _, sc := range scoreList {
 		for _, fn := range allField {
-			val, err := reflections.GetField(&sc, fn)
+			val, err := reflections.GetField(sc, fn)
 			if err != nil {
 				continue
 			}
-
-			switch val.(type) {
-			case string:
-				if val != "" && !funk.ContainsString(fieldList, fn) {
-					fieldList = append(fieldList, fn)
-				}
-			case float64:
-				if val != 0 && !funk.ContainsString(fieldList, fn) {
-					fieldList = append(fieldList, fn)
-				}
-			case int:
-				if val != 0 && !funk.ContainsString(fieldList, fn) {
-					fieldList = append(fieldList, fn)
-				}
-			case bool:
-				if !funk.ContainsString(fieldList, fn) {
-					fieldList = append(fieldList, fn)
-				}
+			nullVal, _ := reflections.GetField(model.Score{}, fn)
+			if val != nullVal && !funk.ContainsString(fieldList, fn) {
+				fieldList = append(fieldList, fn)
 			}
 		}
 	}

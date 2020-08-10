@@ -104,7 +104,7 @@ export default class SearchLayer extends Vue {
 
   get searchExamLabel () {
     if (this.searchExamName === null) return null
-    return this.$app.ExamNameToLabelObj ? this.$app.ExamNameToLabelObj[this.searchExamName] || null : null
+    return this.$app.ExamNameToLabelObj ? this.$app.ExamNameToLabelObj[this.searchExamName] || this.searchExamName || null : null
   }
 
   switchExam (examName: string) {
@@ -165,7 +165,7 @@ export default class SearchLayer extends Vue {
     if (sc === null || !sc.data || !sc.openedSchool || !sc.data.school[sc.openedSchool])
       return []
     return _.orderBy(sc.data.school[sc.openedSchool], (o) => {
-      const num = o.match(/[0-9]+/)
+      const num = String(o).match(/[0-9]+/)
       return num ? Number(num[0] || 0) : 0
     }, ['asc'])
   }

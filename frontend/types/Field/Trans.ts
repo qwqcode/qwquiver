@@ -5,7 +5,7 @@ const transDictCN = {
   [F.ID]: '考号',
   [F.SCHOOL]: '学校',
   [F.CLASS]: '班级',
-  [F.SCORED]: '总分',
+  [F.TOTAL]: '总分',
   [F.RANK]: '总排名',
   [F.YW]: '语文', [F.SX]: '数学', [F.YY]: '英语',
   [F.WL]: '物理', [F.HX]: '化学', [F.SW]: '生物',

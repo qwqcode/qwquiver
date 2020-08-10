@@ -22,7 +22,7 @@ func (c *ChartController) Get() *utils.JSONResult {
 	examGrp := c.Ctx.URLParamDefault("examGrp", "")
 
 	whereJSONStr := c.Ctx.URLParamDefault("where", "")
-	var condList map[string]interface{}
+	var condList map[string]string
 	if whereJSONStr != "" {
 		if err := json.Unmarshal([]byte(whereJSONStr), &condList); err != nil {
 			return utils.JSONError(utils.RespCodeErr, "where 参数 JSON 解析失败")
@@ -55,7 +55,7 @@ func (c *ChartController) Get() *utils.JSONResult {
 		}
 		subjScores := map[string]float64{}
 		for _, f := range exam.Conf.Subj {
-			scoreI, err := reflections.GetField(&sc, f)
+			scoreI, err := reflections.GetField(sc, f)
 			if err != nil {
 				continue
 			}

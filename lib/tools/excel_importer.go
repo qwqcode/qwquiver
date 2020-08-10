@@ -11,6 +11,7 @@ import (
 
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/cheggaaa/pb"
+	"github.com/oleiade/reflections"
 	"github.com/qwqcode/qwquiver/lib"
 	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
@@ -108,6 +109,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	fmt.Println()
 
 	scList := &[](*model.Score){}
+	schoolList := map[string][]string{} // 学校&班级列表
 
 	// 读取数据
 	rankAbleFn := []string{} // 可排序的字段 字段名
@@ -129,30 +131,31 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 			}
 		}
 
+		// 记录学校班级
+		if sc.SCHOOL != "" {
+			if schoolList[sc.SCHOOL] == nil {
+				schoolList[sc.SCHOOL] = []string{}
+			}
+			if sc.CLASS != "" && !funk.Contains(schoolList[sc.SCHOOL], sc.CLASS) {
+				schoolList[sc.SCHOOL] = append(schoolList[sc.SCHOOL], sc.CLASS)
+			}
+		}
+
 		// 求和
 		sc.ZK = sc.YW + sc.SX + sc.YY    // 主科
 		sc.LZ = sc.WL + sc.HX + sc.SW    // 理综
 		sc.WZ = sc.ZZ + sc.LS + sc.DL    // 文综
 		sc.LK = sc.ZK + sc.LZ            // 理科
 		sc.WK = sc.ZK + sc.WZ            // 文科
-		sc.Total = sc.ZK + sc.LZ + sc.WZ // 总分
+		sc.TOTAL = sc.ZK + sc.LZ + sc.WZ // 总分
 
 		// 收集可排序的字段
-		{
-			if sc.ZK > 0 && !funk.Contains(rankAbleFn, "ZK") {
-				rankAbleFn = append(rankAbleFn, "ZK")
-			}
-			if sc.LZ > 0 && !funk.Contains(rankAbleFn, "LZ") {
-				rankAbleFn = append(rankAbleFn, "LZ")
-			}
-			if sc.WZ > 0 && !funk.Contains(rankAbleFn, "WZ") {
-				rankAbleFn = append(rankAbleFn, "WZ")
-			}
-			if sc.LK > 0 && !funk.Contains(rankAbleFn, "LK") {
-				rankAbleFn = append(rankAbleFn, "LK")
-			}
-			if sc.WK > 0 && !funk.Contains(rankAbleFn, "WK") {
-				rankAbleFn = append(rankAbleFn, "WK")
+		for _, field := range model.SFieldRankAble {
+			fieldVal, err := reflections.GetField(sc, field)
+			if err == nil && fieldVal.(float64) > 0 { // 字段值存在
+				if !funk.Contains(rankAbleFn, field) {
+					rankAbleFn = append(rankAbleFn, field)
+				}
 			}
 		}
 
@@ -161,12 +164,13 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	logrus.Info("总分数据已生成")
 	fmt.Println()
 	fmt.Println(" - 排名执行字段 =", rankAbleFn)
+	fmt.Println(" 开始生成排名数据...")
 	fmt.Println()
 
 	// 生成排名数据 func
-	rank := func(scList *[]*model.Score, rankByF string, outputF string) {
-		nScList := make([]*model.Score, len(*scList))
-		copy(nScList, *scList)
+	Rank := func(scList []*model.Score, rankByF string, outputF string) {
+		nScList := make([]*model.Score, len(scList))
+		copy(nScList, scList)
 
 		// 成绩从大到小排序
 		sort.Slice(nScList, func(i, j int) bool {
@@ -183,7 +187,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		for _, sc := range nScList {
 			num := reflect.ValueOf(sc).Elem().FieldByName(rankByF).Float()
 			setRankData := func(rankVal int) {
-				rawSc := funk.Find(*scList, func(x *model.Score) bool {
+				rawSc := funk.Find(scList, func(x *model.Score) bool {
 					return *x == *sc
 				})
 				reflect.ValueOf(rawSc).Elem().FieldByName(outputF).SetInt(int64(rankVal))
@@ -208,19 +212,41 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	}
 
 	// 执行排名
-	rank(scList, "Total", "Rank")
+	Rank(*scList, "TOTAL", "RANK")
 	for _, rankByF := range rankAbleFn {
-		rank(scList, rankByF, rankByF+"Rank")
+		Rank(*scList, rankByF, rankByF+"_RANK") // 相对于全部数据的排名
+	}
+
+	for school, classes := range schoolList {
+		// 相对于学校的排名
+		scListRtSchool := funk.Filter(*scList, func(sc *model.Score) bool {
+			return sc.SCHOOL == school
+		}).([]*model.Score)
+		Rank(scListRtSchool, "TOTAL", "SCHOOL_RANK")
+		for _, rankByF := range rankAbleFn {
+			Rank(scListRtSchool, rankByF, rankByF+"_SCHOOL_RANK")
+		}
+
+		// 相对于班级的排名
+		for _, class := range classes {
+			scListRtClass := funk.Filter(*scList, func(sc *model.Score) bool {
+				return sc.SCHOOL == school && sc.CLASS == class
+			}).([]*model.Score)
+			Rank(scListRtClass, "TOTAL", "CLASS_RANK")
+			for _, rankByF := range rankAbleFn {
+				Rank(scListRtClass, rankByF, rankByF+"_CLASS_RANK")
+			}
+		}
 	}
 
 	logrus.Info("排名数据已生成")
 
 	// 成绩从高到低排序
 	sort.Slice(*scList, func(i, j int) bool {
-		return (*scList)[i].Total > (*scList)[j].Total
+		return (*scList)[i].TOTAL > (*scList)[j].TOTAL
 	})
 
-	logrus.Info("成绩数据排序成功")
+	fmt.Println()
 
 	consoleOutput := func() {
 		for _, sc := range *scList {
@@ -318,7 +344,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	defer tx.Rollback()
 
 	fmt.Print("\n")
-	bar := pb.StartNew(len(*scList))
+	saveBar := pb.StartNew(len(*scList))
 
 	// 开始遍历导入数据库
 	saveErr := []error{}
@@ -328,12 +354,12 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		if err != nil {
 			saveErr = append(saveErr, err)
 		}
-		bar.Add(1)
+		saveBar.Add(1)
 		itemCount++
 	}
 	tx.Commit()
 
-	bar.Finish()
+	saveBar.Finish()
 	fmt.Print("\n\n")
 	logrus.Info("成功导入 ", itemCount, " 条数据")
 

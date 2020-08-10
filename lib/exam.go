@@ -55,12 +55,12 @@ func RemoveExam(name string) error {
 }
 
 // FilterScores 查询指定的成绩数据
-func FilterScores(exam storm.Node, matchCond map[string]interface{}, regMode bool) storm.Query {
+func FilterScores(exam storm.Node, matchCond map[string]string, regMode bool) storm.Query {
 	matchers := []q.Matcher{}
 
 	for key, val := range matchCond {
 		if regMode {
-			matchers = append(matchers, q.Re(key, val.(string)))
+			matchers = append(matchers, q.Re(key, val))
 		} else {
 			matchers = append(matchers, q.Eq(key, val))
 		}
@@ -74,11 +74,11 @@ func FilterScores(exam storm.Node, matchCond map[string]interface{}, regMode boo
 
 // FilterScoresByRegStr 模糊查询指定的成绩数据
 func FilterScoresByRegStr(exam storm.Node, regStr string) storm.Query {
-	return FilterScores(exam, map[string]interface{}{
-		"Name":   regStr,
-		"School": regStr,
-		"Class":  regStr,
-		"Code":   regStr,
+	return FilterScores(exam, map[string]string{
+		"NAME":   regStr,
+		"SCHOOL": regStr,
+		"CLASS":  regStr,
+		"CODE":   regStr,
 	}, true)
 }
 

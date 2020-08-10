@@ -1,10 +1,11 @@
 enum F {
+  /** 编号 */ ID = 'ID',
   /** 姓名 */ NAME = 'NAME',
-  /** 考号 */ ID = 'ID',
+  /** 考号 */ CODE = 'CODE',
   /** 学校 */ SCHOOL = 'SCHOOL',
   /** 班级 */ CLASS = 'CLASS',
 
-  /** 总分 */ SCORED = 'SCORED',
+  /** 总分 */ TOTAL = 'TOTAL',
   /** 排名 */ RANK = 'RANK',
 
   /** 语文 */ YW = 'YW',
@@ -41,7 +42,7 @@ type _ScoreData = {
   [F.NAME]: string, [F.ID]: string,
   [F.SCHOOL]: string,
   [F.CLASS]: string,
-  [F.SCORED]: number,
+  [F.TOTAL]: number,
   [F.RANK]: number,
   [F.YW]: number, [F.SX]: number, [F.YY]: number,
   [F.WL]: number, [F.HX]: number, [F.SW]: number,

@@ -8,6 +8,7 @@ import (
 	"strings"
 	"syscall"
 
+	"github.com/iris-contrib/middleware/cors"
 	"github.com/qwqcode/qwquiver/bindata"
 	"github.com/qwqcode/qwquiver/config"
 	"github.com/qwqcode/qwquiver/controllers/api"
@@ -40,6 +41,12 @@ func RunIris() {
 			logrus.Error(err)
 		}
 	})
+
+	crs := cors.New(cors.Options{
+		AllowedOrigins:   []string{"http://localhost:3000"},
+		AllowCredentials: true,
+	})
+	app.Use(crs)
 
 	// app.Any("/", func(i iris.Context) {
 	// 	_, _ = i.HTML("<h1>Powered by qwquiver</h1>")

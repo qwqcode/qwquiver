@@ -2,7 +2,7 @@
   <div class="explorer card" :class="{ 'card-fullscreen': isFullScreen }">
     <div v-if="data !== null" class="card-header">
       <h2 ref="tTitle" class="card-title">
-        <span class="exam-label" @click="$refs.examSelect.show($event.target)">{{ data.examConf.Label }}</span> - {{ data.dataDesc }}
+        <span class="exam-label" @click="$refs.examSelect.show($event.target)">{{ data.examConf.Label || data.examName }}</span> - {{ data.dataDesc }}
         <span
           style="font-size: 13px;vertical-align: bottom;"
         >[页码 {{ data.page }}/{{ data.lastPage }}]</span>

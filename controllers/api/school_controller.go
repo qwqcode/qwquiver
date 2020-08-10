@@ -29,12 +29,12 @@ func (c *SchoolController) GetAll() *utils.JSONResult {
 
 	exam.Select().Each(new(model.Score), func(record interface{}) error {
 		sc := record.(*model.Score)
-		school := strings.TrimSpace(sc.School)
+		school := strings.TrimSpace(sc.SCHOOL)
 		if school != "" {
 			if schoolList[school] == nil {
 				schoolList[school] = []string{}
 			}
-			class := strings.TrimSpace(sc.Class)
+			class := strings.TrimSpace(sc.CLASS)
 			if !funk.ContainsString(schoolList[school], class) {
 				schoolList[school] = append(schoolList[school], class)
 			}

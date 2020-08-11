@@ -1,4 +1,4 @@
-package api
+package http
 
 import (
 	"encoding/json"
@@ -7,27 +7,22 @@ import (
 	"strconv"
 
 	"github.com/asdine/storm"
-	"github.com/kataras/iris/v12"
+	"github.com/labstack/echo/v4"
 	"github.com/qwqcode/qwquiver/lib"
-	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/thoas/go-funk"
 	"gopkg.in/oleiade/reflections.v1"
 )
 
-type QueryController struct {
-	Ctx iris.Context
-}
+func queryHandler(c echo.Context) error {
+	examName := c.QueryParam("exam")
+	whereJSONStr := c.QueryParam("where")
+	pageStr := c.QueryParam("page")
+	pageSizeStr := c.QueryParam("pageSize")
+	sortJSONStr := c.QueryParam("sort")
 
-func (c *QueryController) Get() *utils.JSONResult {
-	examName := c.Ctx.URLParamDefault("exam", "")
-	whereJSONStr := c.Ctx.URLParamDefault("where", "")
-	pageStr := c.Ctx.URLParamDefault("page", "")
-	pageSizeStr := c.Ctx.URLParamDefault("pageSize", "")
-	sortJSONStr := c.Ctx.URLParamDefault("sort", "")
-
-	var initConf iris.Map
-	isInitReq := c.Ctx.URLParamDefault("init", "") != ""
+	var initConf Map
+	isInitReq := c.QueryParam("init") != ""
 	if isInitReq {
 		// 若为初始化请求
 		examMap := lib.GetAllExamConf()
@@ -35,14 +30,14 @@ func (c *QueryController) Get() *utils.JSONResult {
 		fieldTransDict := model.ScoreFieldTransMap
 
 		if len(examMap) == 0 {
-			return utils.JSONError(utils.RespCodeErr, "未找到任何考试数据，请导入数据")
+			return RespError(c, "未找到任何考试数据，请导入数据")
 		}
 
 		if examName == "" {
 			examName = lib.GetAllExamNames()[0] // 设置默认 exam
 		}
 
-		initConf = iris.Map{
+		initConf = Map{
 			"examMap":        examMap,
 			"examGrpList":    examGrpList,
 			"fieldTransDict": fieldTransDict,
@@ -50,7 +45,7 @@ func (c *QueryController) Get() *utils.JSONResult {
 	}
 
 	if !lib.IsExamExist(examName) {
-		return utils.JSONError(utils.RespCodeErr, "Exam 不存在")
+		return RespError(c, "Exam 不存在")
 	}
 	exam := lib.GetExam(examName)
 	examConf := lib.GetExamConf(examName)
@@ -60,12 +55,12 @@ func (c *QueryController) Get() *utils.JSONResult {
 	var sortList map[string]int
 	if whereJSONStr != "" { // Note: json 不允许出现 Number 类型的 Value (eg.{"Class":1} 必须为 {"Class":"1"})
 		if err := json.Unmarshal([]byte(whereJSONStr), &condList); err != nil {
-			return utils.JSONError(utils.RespCodeErr, "where 参数 JSON 解析失败")
+			return RespError(c, "where 参数 JSON 解析失败")
 		}
 	}
 	if sortJSONStr != "" {
 		if err := json.Unmarshal([]byte(sortJSONStr), &sortList); err != nil {
-			return utils.JSONError(utils.RespCodeErr, "sort 参数 JSON 解析失败")
+			return RespError(c, "sort 参数 JSON 解析失败")
 		}
 	}
 
@@ -135,7 +130,7 @@ func (c *QueryController) Get() *utils.JSONResult {
 	scListPaginated := scoreListPaginate(scList, offset, pageSize) // 数据分页
 	scoreListAvgList := scoreListAvgList(scList, fieldList)        // 平均分
 
-	pageResult := iris.Map{
+	pageResult := Map{
 		"examName":  examName,
 		"dataDesc":  dataDesc,
 		"page":      page,
@@ -154,7 +149,7 @@ func (c *QueryController) Get() *utils.JSONResult {
 		pageResult["initConf"] = initConf
 	}
 
-	return utils.JSONData(pageResult)
+	return RespData(c, pageResult)
 }
 
 func scoreListPaginate(x []model.Score, skip int, size int) []model.Score {

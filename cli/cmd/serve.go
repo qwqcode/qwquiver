@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/qwqcode/qwquiver/app"
+	"github.com/qwqcode/qwquiver/http"
 	"github.com/spf13/cobra"
 )
 
@@ -12,7 +12,7 @@ var serveCmd = &cobra.Command{
 	Short:   "启动服务器",
 	Long:    rootCmd.Long,
 	Run: func(cmd *cobra.Command, args []string) {
-		app.RunIris()
+		http.Run()
 	},
 	Args: cobra.NoArgs,
 }

@@ -1,26 +1,20 @@
-package api
+package http
 
 import (
 	"strings"
 
-	"github.com/kataras/iris/v12"
+	"github.com/labstack/echo/v4"
 	"github.com/qwqcode/qwquiver/lib"
-	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/thoas/go-funk"
 )
 
-// SchoolController 配置数据控制器
-type SchoolController struct {
-	Ctx iris.Context
-}
-
 // GetAll Api: /api/school/all
-func (c *SchoolController) GetAll() *utils.JSONResult {
-	examName := c.Ctx.URLParamDefault("exam", "")
+func schoolAllHandler(c echo.Context) error {
+	examName := c.QueryParam("exam")
 
 	if !lib.IsExamExist(examName) {
-		return utils.JSONError(utils.RespCodeErr, "Exam 不存在")
+		return RespError(c, "Exam 不存在")
 	}
 	exam := lib.GetExam(examName)
 	// examConf := lib.GetExamConf(examName)
@@ -42,7 +36,7 @@ func (c *SchoolController) GetAll() *utils.JSONResult {
 		return nil
 	})
 
-	return utils.JSONData(iris.Map{
+	return RespData(c, Map{
 		"school": schoolList,
 	})
 }

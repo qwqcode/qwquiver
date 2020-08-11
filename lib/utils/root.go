@@ -16,12 +16,3 @@ func GetStructFields(t interface{}) []string {
 
 	return names
 }
-
-// Sum 求和
-func Sum(input ...float64) float64 {
-	var sum float64 = 0
-	for i := range input {
-		sum += input[i]
-	}
-	return sum
-}

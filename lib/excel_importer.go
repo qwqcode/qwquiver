@@ -1,4 +1,4 @@
-package tools
+package lib
 
 import (
 	"encoding/json"
@@ -12,7 +12,6 @@ import (
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/cheggaaa/pb"
 	"github.com/oleiade/reflections"
-	"github.com/qwqcode/qwquiver/lib"
 	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/sirupsen/logrus"
@@ -41,7 +40,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	}
 
 	// 查询是否相同 examName 的 bucket 已存在
-	if lib.IsExamExist(examName) {
+	if IsExamExist(examName) {
 		logrus.Error("ExcelImporter: 名称为 '" + examName + "' 的数据表已存在，无法重复导入；您可以执行 `qwquiver exam` 对现有 Exam 进行删除操作")
 		return
 	}
@@ -323,20 +322,20 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	logrus.Info("学科最高分数已获取")
 
 	// 将数据导入数据库
-	if err := lib.CreateExam(examName); err != nil {
+	if err := CreateExam(examName); err != nil {
 		logrus.Error("ExcelImporter: 创建 ScoreBucket 发生错误 ", err)
 		return
 	}
 
 	// 保存 Exam 配置
-	if err := lib.SaveExamConf(examConf); err != nil {
+	if err := SaveExamConf(examConf); err != nil {
 		logrus.Error("ExcelImporter: 写入 ExamConf 发生错误 ", err)
 		return
 	}
 	logrus.Info("ExamConf 已成功写入")
 
 	// 准备开始一个 transaction
-	bucket := lib.GetExam(examName)
+	bucket := GetExam(examName)
 	tx, err := bucket.Begin(true) // https://github.com/asdine/storm#transactions
 	if err != nil {
 		logrus.Error("ExcelImporter: 准备 transaction 操作时发生错误 ", err)
@@ -373,7 +372,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	}
 
 	fmt.Print("\n\n")
-	fmt.Println("ExamConf = '" + lib.GetExamConfJSONStr(examName, false) + "'")
+	fmt.Println("ExamConf = '" + GetExamConfJSONStr(examName, false) + "'")
 	fmt.Print("\n\n")
 	fmt.Println("您可以执行以下命令，对 Exam 进行修改：")
 	fmt.Println("  - 更改配置：qwquiver exam config set \"" + examName + "\" -h")

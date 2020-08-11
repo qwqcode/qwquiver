@@ -1,31 +1,25 @@
-package api
+package http
 
 import (
 	"encoding/json"
 	"fmt"
 	"strconv"
 
-	"github.com/kataras/iris/v12"
+	"github.com/labstack/echo/v4"
 	"github.com/qwqcode/qwquiver/lib"
-	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"gopkg.in/oleiade/reflections.v1"
 )
 
-// ChartController 配置数据控制器
-type ChartController struct {
-	Ctx iris.Context
-}
-
 // Get Api: /api/chart
-func (c *ChartController) Get() *utils.JSONResult {
-	examGrp := c.Ctx.URLParamDefault("examGrp", "")
+func chartHandler(c echo.Context) error {
+	examGrp := c.QueryParam("examGrp")
 
-	whereJSONStr := c.Ctx.URLParamDefault("where", "")
+	whereJSONStr := c.QueryParam("where")
 	var condList map[string]string
 	if whereJSONStr != "" {
 		if err := json.Unmarshal([]byte(whereJSONStr), &condList); err != nil {
-			return utils.JSONError(utils.RespCodeErr, "where 参数 JSON 解析失败")
+			return RespError(c, "where 参数 JSON 解析失败")
 		}
 	}
 
@@ -71,7 +65,7 @@ func (c *ChartController) Get() *utils.JSONResult {
 		chartData = append(chartData, subjScores)
 	}
 
-	return utils.JSONData(iris.Map{
+	return RespData(c, Map{
 		"chartData": chartData,
 		"fieldList": fields,
 		"uncertain": uncertain,

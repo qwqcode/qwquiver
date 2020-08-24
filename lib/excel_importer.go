@@ -135,7 +135,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 			if schoolList[sc.SCHOOL] == nil {
 				schoolList[sc.SCHOOL] = []string{}
 			}
-			if sc.CLASS != "" && !funk.Contains(schoolList[sc.SCHOOL], sc.CLASS) {
+			if sc.CLASS != "" && !funk.ContainsString(schoolList[sc.SCHOOL], sc.CLASS) {
 				schoolList[sc.SCHOOL] = append(schoolList[sc.SCHOOL], sc.CLASS)
 			}
 		}
@@ -186,10 +186,12 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		for _, sc := range nScList {
 			num := reflect.ValueOf(sc).Elem().FieldByName(rankByF).Float()
 			setRankData := func(rankVal int) {
-				rawSc := funk.Find(scList, func(x *model.Score) bool {
-					return *x == *sc
-				})
-				reflect.ValueOf(rawSc).Elem().FieldByName(outputF).SetInt(int64(rankVal))
+				for _, rawSc := range scList {
+					if *rawSc == *sc {
+						reflect.ValueOf(rawSc).Elem().FieldByName(outputF).SetInt(int64(rankVal))
+						break
+					}
+				}
 				// fmt.Println(rawSc.(*model.Score).Name, " ", rankVal)
 			}
 

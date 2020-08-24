@@ -116,7 +116,7 @@ func queryHandler(c echo.Context) error {
 	offset = (page - 1) * pageSize
 	total, _ = query.Count(&model.Score{})
 	lastPage = int(math.Ceil(float64(total) / float64(pageSize)))
-	// query = query.Skip(offset).Limit(pageSize) // 先读取完整 scoreList，再分页
+	query = query.Skip(offset).Limit(pageSize) // 先读取完整 scoreList，再分页
 
 	// 响应数据
 	scList := []model.Score{}
@@ -127,8 +127,8 @@ func queryHandler(c echo.Context) error {
 	})
 
 	fieldList := getScoresFieldList(*examConf, scList)
-	scListPaginated := scoreListPaginate(scList, offset, pageSize) // 数据分页
-	scoreListAvgList := scoreListAvgList(scList, fieldList)        // 平均分
+	//scListPaginated := scoreListPaginate(scList, offset, pageSize) // 数据分页
+	scoreListAvgList := Map{} //scoreListAvgList(scList, fieldList)        // 平均分
 
 	pageResult := Map{
 		"examName":  examName,
@@ -138,7 +138,7 @@ func queryHandler(c echo.Context) error {
 		"total":     total,
 		"lastPage":  lastPage,
 		"fieldList": fieldList,
-		"list":      scListPaginated,
+		"list":      scList,
 		"examConf":  examConf,
 		"avgList":   scoreListAvgList,
 		"sortList":  sortList,

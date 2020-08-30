@@ -104,7 +104,7 @@ func cmdExamRemoveRun(cmd *cobra.Command, args []string) {
 // config set
 func cmdExamConfigSetRun(cmd *cobra.Command, args []string) {
 	examName := args[0]
-	if !lib.IsExamExist(examName) {
+	if !lib.HasExam(examName) {
 		logrus.Error("Exam '" + examName + "' 不存在")
 		return
 	}
@@ -136,7 +136,7 @@ func cmdExamConfigSetRun(cmd *cobra.Command, args []string) {
 			var subjList []string
 			err := json.Unmarshal([]byte(subjStr), &subjList)
 			if err == nil && subjList != nil {
-				examConf.Subj = subjList
+				examConf.Subj = subjStr
 			} else {
 				logrus.Error("尝试解析 flag '--subj' 的 JSON 数据时发生错误 ", err)
 			}
@@ -145,7 +145,7 @@ func cmdExamConfigSetRun(cmd *cobra.Command, args []string) {
 			var subjFullScore map[string]float64
 			err := json.Unmarshal([]byte(sfc), &subjFullScore)
 			if err == nil && subjFullScore != nil {
-				examConf.SubjFullScore = subjFullScore
+				examConf.SubjFullScore = sfc
 			} else {
 				logrus.Error("尝试解析 flag '--subj-full-score' 的 JSON 数据时发生错误 ", err)
 			}
@@ -168,7 +168,7 @@ func cmdExamConfigSetRun(cmd *cobra.Command, args []string) {
 // config get
 func cmdExamConfigGetRun(cmd *cobra.Command, args []string) {
 	examName := args[0]
-	if !lib.IsExamExist(examName) {
+	if !lib.HasExam(examName) {
 		logrus.Error("Exam '" + examName + "' 不存在")
 		return
 	}

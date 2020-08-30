@@ -2,11 +2,11 @@ package model
 
 // Score 成绩模型
 type Score struct {
-	ID          int     `storm:"id,increment"` // 编号
-	NAME        string  `storm:"index"`        // 姓名
-	CODE        string  `storm:"index"`        // 考号
-	SCHOOL      string  `storm:"index"`        // 学校
-	CLASS       string  `storm:"index"`        // 班级
+	ID          int     `gorm:"primaryKey;autoIncrement"` // 编号
+	NAME        string  ``                                // 姓名
+	CODE        string  ``                                // 考号
+	SCHOOL      string  ``                                // 学校
+	CLASS       string  ``                                // 班级
 	TOTAL       float64 // 总分
 	RANK        int     // 排名
 	SCHOOL_RANK int     // 校排名

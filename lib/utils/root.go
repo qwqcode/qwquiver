@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"encoding/json"
 	"reflect"
 )
 
@@ -15,4 +16,17 @@ func GetStructFields(t interface{}) []string {
 	}
 
 	return names
+}
+
+func JSONEncode(obj interface{}) (str string, err error) {
+	data, err := json.Marshal(obj)
+	if err != nil {
+		return
+	}
+	str = string(data)
+	return
+}
+
+func JSONDecode(str string, t interface{}) error {
+	return json.Unmarshal([]byte(str), t)
 }

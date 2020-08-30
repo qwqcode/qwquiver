@@ -1,43 +1,47 @@
 package lib
 
 import (
-	"github.com/asdine/storm"
 	"github.com/qwqcode/qwquiver/config"
-	"github.com/thoas/go-funk"
-	"go.etcd.io/bbolt"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
 )
 
 // DB is database
-var DB *storm.DB
+var DB *gorm.DB
 
 // OpenDb 打开数据库
 func OpenDb(dbFile string) (err error) {
-	DB, err = storm.Open(config.Instance.DbFile)
+	DB, err = gorm.Open(sqlite.Open(config.Instance.DbFile), &gorm.Config{})
 	return
 }
 
-// CloseDb 关闭数据
-func CloseDb() (err error) {
-	return DB.Close()
-}
+// GetTables 获取所有数据表名称
+func GetTables() (tables []string) {
+	rows, err := DB.Raw("SELECT `name` FROM sqlite_master WHERE type='table';").Rows()
+	if err != nil {
+		panic(err)
+	}
 
-// GetAllBucketNames 获取所有 Bucket 的名称
-func GetAllBucketNames() (allNames []string) {
-	_ = DB.Bolt.View(func(tx *bbolt.Tx) error {
-		return tx.ForEach(func(name []byte, _ *bbolt.Bucket) error {
-			allNames = append(allNames, string(name))
-			return nil
-		})
-	})
+	for rows.Next() {
+		var table string
+		if err := rows.Scan(&table); err != nil {
+			panic(err)
+		}
+
+		tables = append(tables, table)
+		// if table != "schema_migrations" {
+		// 	tables = append(tables, table)
+		// }
+	}
 	return
 }
 
-// IsBucketExits 判断 Bucket 是否存在
-func IsBucketExits(name string) bool {
-	return funk.ContainsString(GetAllBucketNames(), name)
+// HasTable 判断数据表是否存在
+func HasTable(name string) bool {
+	return DB.Migrator().HasTable(name)
 }
 
-// RemoveBucket 删除 Bucket
-func RemoveBucket(name string) error {
-	return DB.Drop(name)
+// DropTable 删除数据表
+func DropTable(name string) error {
+	return DB.Migrator().DropTable(name)
 }

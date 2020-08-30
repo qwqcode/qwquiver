@@ -40,10 +40,12 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	}
 
 	// 查询是否相同 examName 的 bucket 已存在
-	if IsExamExist(examName) {
+	if HasExam(examName) {
 		logrus.Error("ExcelImporter: 名称为 '" + examName + "' 的数据表已存在，无法重复导入；您可以执行 `qwquiver exam` 对现有 Exam 进行删除操作")
 		return
 	}
+
+	examTable := GetExamTableName(examName)
 
 	// examConf 处理
 	var jExamConf model.ExamConf
@@ -101,7 +103,9 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		}
 	}
 	subjList := funk.IntersectString(fieldList, model.SFieldSubj) // 考试科目
-	examConf.Subj = subjList
+
+	subjListJSON, _ := utils.JSONEncode(subjList)
+	examConf.Subj = subjListJSON
 
 	fmt.Println(" - 表头 POSITION =", fieldPos)
 	fmt.Println(" - 考试科目 =", subjList)
@@ -311,65 +315,58 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 
 		return
 	}
-	subjFullScore := TryGetFullScore()
-	if examConf.SubjFullScore == nil {
-		examConf.SubjFullScore = map[string]float64{}
+
+	var subjFullScore map[string]float64
+	if err := utils.JSONDecode(examConf.SubjFullScore, &subjFullScore); err != nil {
+		subjFullScore = map[string]float64{}
 	}
-	for subj, fullScore := range subjFullScore {
-		if fullScore != 0 && examConf.SubjFullScore[subj] == 0 {
-			examConf.SubjFullScore[subj] = fullScore
+
+	for subj, fullScore := range TryGetFullScore() {
+		if fullScore != 0 && subjFullScore[subj] == 0 {
+			subjFullScore[subj] = fullScore
 		}
 	}
+	subjFullScoreJSON, _ := utils.JSONEncode(subjFullScore)
+	examConf.SubjFullScore = subjFullScoreJSON
 
 	logrus.Info("学科最高分数已获取")
-
-	// 将数据导入数据库
-	if err := CreateExam(examName); err != nil {
-		logrus.Error("ExcelImporter: 创建 ScoreBucket 发生错误 ", err)
-		return
-	}
 
 	// 保存 Exam 配置
 	if err := SaveExamConf(examConf); err != nil {
 		logrus.Error("ExcelImporter: 写入 ExamConf 发生错误 ", err)
-		return
+		panic(err)
 	}
 	logrus.Info("ExamConf 已成功写入")
 
-	// 准备开始一个 transaction
-	bucket := GetExam(examName)
-	tx, err := bucket.Begin(true) // https://github.com/asdine/storm#transactions
-	if err != nil {
-		logrus.Error("ExcelImporter: 准备 transaction 操作时发生错误 ", err)
+	// 将数据导入数据库
+	if err := CreateExam(examName); err != nil {
+		logrus.Error("创建 Exam Table 发生错误 ", err)
+		panic(err)
 	}
-	defer tx.Rollback()
 
 	fmt.Print("\n")
 	saveBar := pb.StartNew(len(*scList))
 
 	// 开始遍历导入数据库
+	// TODO: https://gorm.io/zh_CN/docs/transactions.html 可改用事物
 	saveErr := []error{}
 	itemCount := 0
 	for _, sc := range *scList {
-		err := tx.Save(sc)
-		if err != nil {
-			saveErr = append(saveErr, err)
+		if rs := DB.Table(examTable).Create(sc); rs.Error != nil {
+			logrus.Error(rs.Error)
+			saveErr = append(saveErr, rs.Error)
 		}
 		saveBar.Add(1)
 		itemCount++
 	}
-	tx.Commit()
 
 	saveBar.Finish()
 	fmt.Print("\n\n")
-	logrus.Info("成功导入 ", itemCount, " 条数据")
+	logrus.Info("成功导入 ", len(*scList), " 条数据")
 
 	// 错误处理
 	if len(saveErr) > 0 {
 		logrus.Error("ExcelImporter: 保存 Score 过程中发生错误")
-		for _, err := range saveErr {
-			logrus.Error("  ", err)
-		}
 		return
 	}
 

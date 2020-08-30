@@ -42,7 +42,7 @@ func init() {
 }
 
 func cmdDbListRun(cmd *cobra.Command, args []string) {
-	allBucketNames := lib.GetAllBucketNames()
+	allBucketNames := lib.GetTables()
 	fmt.Printf("共有 %d 个 Bucket\n", len(allBucketNames))
 	for i, name := range allBucketNames {
 		itemLenS := ""
@@ -61,9 +61,9 @@ func cmdDbRemoveRun(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := lib.RemoveBucket(bucketName)
+	err := lib.DropTable(bucketName)
 	if err != nil {
-		fmt.Println("删除 Bucket 发生错误")
+		fmt.Println("删除 Table 发生错误")
 		fmt.Println(err)
 	}
 }

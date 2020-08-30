@@ -7,7 +7,9 @@ import (
 
 	"github.com/labstack/echo/v4"
 	"github.com/qwqcode/qwquiver/lib"
+	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
+	"github.com/sirupsen/logrus"
 	"gopkg.in/oleiade/reflections.v1"
 )
 
@@ -30,8 +32,9 @@ func chartHandler(c echo.Context) error {
 
 	chartData := []interface{}{}
 	for _, exam := range examList {
-		var queryPersonSc []model.Score
-		if err := lib.FilterScores(exam.Data, condList, false).Find(&queryPersonSc); err != nil {
+		queryPersonSc := []model.Score{}
+		if rs := lib.FilterScores(lib.NewExamQuery(exam.Name), condList, false).Find(&queryPersonSc); rs.Error != nil {
+			logrus.Error("api.chart ", rs.Error)
 			continue
 		}
 		if len(queryPersonSc) == 0 {
@@ -44,18 +47,32 @@ func chartHandler(c echo.Context) error {
 		sc := queryPersonSc[0]
 
 		// 统计此人此次考试的各科分数
-		if exam.Conf.Subj == nil || len(exam.Conf.Subj) == 0 {
+
+		var subjects []string
+		if exam.Conf.Subj != "" {
+			if err := utils.JSONDecode(exam.Conf.Subj, &subjects); err != nil {
+				continue
+			}
+			if len(subjects) == 0 {
+				continue
+			}
+		} else {
+			continue
+		}
+
+		var subjFullScore map[string]float64
+		if err := utils.JSONDecode(exam.Conf.SubjFullScore, &subjFullScore); err != nil {
 			continue
 		}
 		subjScores := map[string]float64{}
-		for _, f := range exam.Conf.Subj {
+		for _, f := range subjects {
 			scoreI, err := reflections.GetField(sc, f)
 			if err != nil {
 				continue
 			}
 			score := float64(scoreI.(float64))
-			if exam.Conf.SubjFullScore != nil && exam.Conf.SubjFullScore[f] > 0 {
-				score = (score / exam.Conf.SubjFullScore[f]) * 100            // 转为百分制
+			if subjFullScore != nil && subjFullScore[f] > 0 {
+				score = (score / subjFullScore[f]) * 100                      // 转为百分制
 				score, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", score), 64) // 保留两位小数
 			}
 

@@ -6,9 +6,9 @@ import (
 	"math"
 	"strconv"
 
-	"github.com/asdine/storm"
 	"github.com/labstack/echo/v4"
 	"github.com/qwqcode/qwquiver/lib"
+	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/thoas/go-funk"
 	"gopkg.in/oleiade/reflections.v1"
@@ -44,10 +44,10 @@ func queryHandler(c echo.Context) error {
 		}
 	}
 
-	if !lib.IsExamExist(examName) {
+	if !lib.HasExam(examName) {
 		return RespError(c, "Exam 不存在")
 	}
-	exam := lib.GetExam(examName)
+	query := lib.NewExamQuery(examName)
 	examConf := lib.GetExamConf(examName)
 
 	// JSON 解析
@@ -65,17 +65,16 @@ func queryHandler(c echo.Context) error {
 	}
 
 	// 查询条件
-	var query storm.Query
 	if condList == nil || len(condList) == 0 {
 		// 全部数据
-		query = exam.Select()
+
 	} else {
 		if len(condList) == 1 && condList["NAME"] != "" {
 			// 模糊查询
-			query = lib.FilterScoresByRegStr(exam, condList["NAME"])
+			query = lib.FilterScoresByRegStr(query, condList["NAME"])
 		} else {
 			// 精确查询
-			query = lib.FilterScores(exam, condList, false)
+			query = lib.FilterScores(query, condList, false)
 		}
 	}
 
@@ -96,15 +95,17 @@ func queryHandler(c echo.Context) error {
 		sortList = map[string]int{"TOTAL": -1}
 	}
 	for key, t := range sortList {
-		query = query.OrderBy(key)
-		if t == -1 {
-			query = query.Reverse()
+		if t == 1 {
+			query = query.Order(key + ` asc`) // TODO: sql注入风险 待测试
+		} else if t == -1 {
+			query = query.Order(key + ` desc`)
 		}
 		break
 	}
 
 	// 分页操作
-	var page, pageSize, offset, total, lastPage int
+	var page, pageSize, offset, lastPage int
+	var total int64
 	page, _ = strconv.Atoi(pageStr)
 	pageSize, _ = strconv.Atoi(pageSizeStr)
 	if page <= 0 {
@@ -114,17 +115,13 @@ func queryHandler(c echo.Context) error {
 		pageSize = 50
 	}
 	offset = (page - 1) * pageSize
-	total, _ = query.Count(&model.Score{})
+	query.Count(&total)
 	lastPage = int(math.Ceil(float64(total) / float64(pageSize)))
-	query = query.Skip(offset).Limit(pageSize) // 先读取完整 scoreList，再分页
+	query = query.Offset(offset).Limit(pageSize) // 先读取完整 scoreList，再分页
 
 	// 响应数据
 	scList := []model.Score{}
-	query.Each(new(model.Score), func(record interface{}) error {
-		sc := record.(*model.Score)
-		scList = append(scList, *sc)
-		return nil
-	})
+	query.Find(&scList)
 
 	fieldList := getScoresFieldList(*examConf, scList)
 	//scListPaginated := scoreListPaginate(scList, offset, pageSize) // 数据分页
@@ -207,8 +204,11 @@ func getScoresFieldList(examConf model.ExamConf, scoreList []model.Score) (field
 	}
 
 	// 将 examConf 预设的学科字段名加入
-	if examConf.Subj != nil && len(examConf.Subj) > 0 {
-		fieldList = append(fieldList, examConf.Subj...)
+	if examConf.Subj != "" {
+		var subjects []string
+		if err := utils.JSONDecode(examConf.Subj, &subjects); err == nil {
+			fieldList = append(fieldList, subjects...)
+		}
 	}
 
 	for _, sc := range scoreList {

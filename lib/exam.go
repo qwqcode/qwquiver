@@ -47,21 +47,15 @@ func CreateExam(name string) (err error) {
 	}
 
 	tableName := GetExamTableName(name)
-	score := model.Score{}
-	if err := DB.Migrator().CreateTable(&score); err != nil {
+	model := &model.Score{}
+	if err := DB.Table(tableName).Migrator().AutoMigrate(model); err != nil {
 		panic(err)
 	}
-	if err := DB.Migrator().RenameTable(&score, tableName); err != nil {
-		panic(err)
-	}
-	// TODO: index 搞不定
-	// err = DB.Migrator().RenameIndex(&score, "idx_score_name", "idx_score_name_"+name)
-	// err = DB.Migrator().RenameIndex(&score, "idx_score_code", "idx_score_code_"+name)
-	// err = DB.Migrator().RenameIndex(&score, "idx_score_school", "idx_score_school_"+name)
-	// err = DB.Migrator().RenameIndex(&score, "idx_score_class", "idx_score_class_"+name)
-	if err != nil {
-		panic(err)
-	}
+	// TODO: tableName非法字符的处理
+	DB.Exec("CREATE INDEX `idx_name_" + tableName + "` ON `" + tableName + "` (name)")
+	DB.Exec("CREATE INDEX `idx_code_" + tableName + "` ON `" + tableName + "` (code)")
+	DB.Exec("CREATE INDEX `idx_school_" + tableName + "` ON `" + tableName + "` (school)")
+	DB.Exec("CREATE INDEX `idx_class_" + tableName + "` ON `" + tableName + "` (class)")
 	return
 }
 

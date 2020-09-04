@@ -32,6 +32,6 @@ func schoolAllHandler(c echo.Context) error {
 	}
 
 	return RespData(c, Map{
-		"school": schoolList,
+		"school": result,
 	})
 }

@@ -48,7 +48,7 @@ func CreateExam(name string) (err error) {
 
 	tableName := GetExamTableName(name)
 	model := &model.Score{}
-	if err := DB.Table(tableName).Migrator().AutoMigrate(model); err != nil {
+	if err := DB.Table(tableName).Migrator().CreateTable(model); err != nil {
 		panic(err)
 	}
 	// TODO: tableName非法字符的处理

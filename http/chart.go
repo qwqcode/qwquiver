@@ -64,7 +64,7 @@ func chartHandler(c echo.Context) error {
 		if err := utils.JSONDecode(exam.Conf.SubjFullScore, &subjFullScore); err != nil {
 			continue
 		}
-		subjScores := map[string]float64{}
+		subjScores := map[string]interface{}{}
 		for _, f := range subjects {
 			scoreI, err := reflections.GetField(sc, f)
 			if err != nil {
@@ -79,6 +79,11 @@ func chartHandler(c echo.Context) error {
 			subjScores[f] = score
 		}
 
+		examKey := exam.Conf.Label
+		if examKey == "" {
+			examKey = exam.Conf.Name
+		}
+		subjScores["exam"] = examKey
 		chartData = append(chartData, subjScores)
 	}
 

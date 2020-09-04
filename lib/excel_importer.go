@@ -348,7 +348,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	saveBar := pb.StartNew(len(*scList))
 
 	// 开始遍历导入数据库
-	// TODO: https://gorm.io/zh_CN/docs/transactions.html 可改用事物
+	// TODO: https://gorm.io/zh_CN/docs/transactions.html 可改用 transactions
 	saveErr := []error{}
 	itemCount := 0
 	for _, sc := range *scList {

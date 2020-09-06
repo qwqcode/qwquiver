@@ -7,6 +7,7 @@ import (
 )
 
 type (
+	// Map is a map
 	Map = map[string]interface{}
 )
 
@@ -15,6 +16,7 @@ type JSONResult struct {
 	Success bool        `json:"success"` // 是否成功
 	Msg     string      `json:"msg"`     // 消息
 	Data    interface{} `json:"data"`    // 数据
+	Extra   interface{} `json:"extra"`   // 数据
 }
 
 // RespJSON is normal json result
@@ -42,9 +44,12 @@ func RespSuccess(c echo.Context) error {
 }
 
 // RespError is just response error
-func RespError(c echo.Context, msg string) error {
+func RespError(c echo.Context, msg string, details ...string) error {
 	return c.JSON(http.StatusInternalServerError, &JSONResult{
 		Success: false,
 		Msg:     msg,
+		Extra: Map{
+			"errDetails": details,
+		},
 	})
 }

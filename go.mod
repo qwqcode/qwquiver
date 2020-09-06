@@ -5,6 +5,7 @@ go 1.14
 require (
 	github.com/360EntSecGroup-Skylar/excelize v1.4.1
 	github.com/DataDog/zstd v1.4.1 // indirect
+	github.com/GeertJohan/go.rice v1.0.0 // indirect
 	github.com/Sereal/Sereal v0.0.0-20190618215532-0b8ac451a863 // indirect
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/cheggaaa/pb v1.0.29

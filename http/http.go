@@ -27,8 +27,9 @@ func Run() {
 
 	api := e.Group("/api")
 	api.GET("/query", queryHandler)
+	api.GET("/query/avg", queryAvgHandler)
 	api.GET("/conf", confHandler)
-	api.GET("/chart", chartHandler)
+	api.GET("/analyze", analyzeHandler)
 	api.GET("/school/all", schoolAllHandler)
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", config.Instance.Port)))

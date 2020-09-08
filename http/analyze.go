@@ -28,7 +28,9 @@ func analyzeHandler(c echo.Context) error {
 	uncertain := false // 是否为不确定的数据
 	examList := lib.GetExamsByGrp(examGrp)
 	fields := []string{}
-	fields = append(fields, model.SFieldSubj...)
+	for _, f := range model.SFieldSubj {
+		fields = append(fields, model.ScoreFieldTransMap[f])
+	}
 
 	// 获取每次考试的数据
 	exams := []interface{}{}
@@ -78,7 +80,7 @@ func analyzeHandler(c echo.Context) error {
 					score, _ = strconv.ParseFloat(fmt.Sprintf("%.2f", score), 64) // 保留两位小数
 				}
 
-				subjScores[f] = score
+				subjScores[model.ScoreFieldTransMap[f]] = score
 			}
 
 			examKey := exam.Conf.Label
@@ -86,12 +88,18 @@ func analyzeHandler(c echo.Context) error {
 				examKey = exam.Conf.Name
 			}
 			subjScores["exam"] = examKey
+			subjScores["date"] = exam.Conf.Date
 			exams = append(exams, subjScores)
 		}
 	}
 
 	return RespData(c, Map{
+		"examGrp":   examGrp,
+		"name":      condList["NAME"],
+		"school":    condList["SCHOOL"],
+		"class":     condList["CLASS"],
 		"exams":     exams,
+		"examCount": len(exams),
 		"fieldList": fields,
 		"uncertain": uncertain,
 	})

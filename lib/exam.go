@@ -202,7 +202,7 @@ func SaveExamConf(examConf *model.ExamConf) error {
 
 // UpdateExamConf 修改考试配置
 func UpdateExamConf(examConf *model.ExamConf) error {
-	return DB.Save(examConf).Error
+	return DB.Table(_examConfTb).Save(examConf).Error
 }
 
 // UpdateExamConfByJSON 修改考试配置，通过 JSON 数据

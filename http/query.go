@@ -45,7 +45,7 @@ func getQueryAPICommonParms(c echo.Context) *queryAPICommonParms {
 	isInitReq := c.QueryParam("init") != ""
 	if isInitReq {
 		// 若为初始化请求
-		examMap := lib.GetAllExamConf()
+		examMap := lib.GetAllExamsSorted()
 		examGrpList := lib.GetAllExamGrps()
 		fieldTransDict := model.ScoreFieldTransMap
 
@@ -55,7 +55,7 @@ func getQueryAPICommonParms(c echo.Context) *queryAPICommonParms {
 		}
 
 		if p.examName == "" {
-			p.examName = lib.GetAllExamNames()[0] // 设置默认 exam
+			p.examName = lib.GetAllExamsSorted()[0].Name // 设置默认 exam
 		}
 
 		p.initConf = Map{

@@ -7,6 +7,7 @@ require (
 	github.com/DataDog/zstd v1.4.1 // indirect
 	github.com/GeertJohan/go.rice v1.0.0 // indirect
 	github.com/Sereal/Sereal v0.0.0-20190618215532-0b8ac451a863 // indirect
+	github.com/araddon/dateparse v0.0.0-20200409225146-d820a6159ab1
 	github.com/asdine/storm v2.1.2+incompatible
 	github.com/cheggaaa/pb v1.0.29
 	github.com/golang/snappy v0.0.1 // indirect

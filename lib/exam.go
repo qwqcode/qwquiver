@@ -3,8 +3,10 @@ package lib
 import (
 	"encoding/json"
 	"errors"
+	"sort"
 	"strings"
 
+	"github.com/araddon/dateparse"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/thoas/go-funk"
 	"gorm.io/gorm"
@@ -22,6 +24,26 @@ func GetAllExamNames() (examNames []string) {
 		}
 	}
 	return
+}
+
+// GetAllExamsSorted 获取根据时间排序的 Exam 列表
+func GetAllExamsSorted() []model.ExamConf {
+	exams := GetAllExamConf()
+
+	// 根据时间降序
+	sort.Slice(exams, func(i, j int) bool {
+		if exams[i].Date == "" || exams[j].Date == "" {
+			return false
+		}
+		t1, err := dateparse.ParseAny(exams[i].Date)
+		t2, err := dateparse.ParseAny(exams[j].Date)
+		if err != nil {
+			return false
+		}
+		return t1.After(t2)
+	})
+
+	return exams
 }
 
 // GetExamName 获取 Exam 名（非 tableName）

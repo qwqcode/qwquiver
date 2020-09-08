@@ -10,6 +10,7 @@ import (
 	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/sirupsen/logrus"
+	"github.com/thoas/go-funk"
 	"gopkg.in/oleiade/reflections.v1"
 )
 
@@ -32,6 +33,8 @@ func analyzeHandler(c echo.Context) error {
 		fields = append(fields, model.ScoreFieldTransMap[f])
 	}
 
+	classList := []string{} // 从数据中收集该姓名存在的班级
+
 	// 获取每次考试的数据
 	exams := []interface{}{}
 	{
@@ -50,8 +53,12 @@ func analyzeHandler(c echo.Context) error {
 
 			sc := queryPersonSc[0]
 
-			// 统计此人此次考试的各科分数
+			// 记录该姓名存在的班级
+			if !funk.ContainsString(classList, sc.CLASS) {
+				classList = append(classList, sc.CLASS)
+			}
 
+			// 统计此人此次考试的各科分数
 			var subjects []string
 			if exam.Conf.Subj != "" {
 				if err := utils.JSONDecode(exam.Conf.Subj, &subjects); err != nil {
@@ -93,14 +100,16 @@ func analyzeHandler(c echo.Context) error {
 		}
 	}
 
-	return RespData(c, Map{
+	result := Map{
 		"examGrp":   examGrp,
 		"name":      condList["NAME"],
 		"school":    condList["SCHOOL"],
-		"class":     condList["CLASS"],
+		"classList": classList,
 		"exams":     exams,
 		"examCount": len(exams),
 		"fieldList": fields,
 		"uncertain": uncertain,
-	})
+	}
+
+	return RespData(c, result)
 }

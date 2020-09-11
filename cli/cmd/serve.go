@@ -1,6 +1,8 @@
 package cmd
 
 import (
+	"fmt"
+
 	"github.com/qwqcode/qwquiver/http"
 	"github.com/spf13/cobra"
 )
@@ -12,6 +14,8 @@ var serveCmd = &cobra.Command{
 	Short:   "启动服务器",
 	Long:    rootCmd.Long,
 	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Println(Banner)
+		fmt.Println("-------------------")
 		http.Run()
 	},
 	Args: cobra.NoArgs,

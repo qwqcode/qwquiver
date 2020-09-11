@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/qwqcode/qwquiver/lib"
+	"github.com/qwqcode/qwquiver/lib/exd"
 	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/spf13/cobra"
@@ -33,7 +33,7 @@ var importCmd = &cobra.Command{
 
 		// 导入多个文件
 		for _, filename := range args {
-			lib.ImportExcel(examName, filename, examConfJSON)
+			exd.ImportExcel(examName, filename, examConfJSON)
 		}
 	},
 	Args: cobra.MinimumNArgs(1),

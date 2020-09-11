@@ -2,14 +2,15 @@ package http
 
 import (
 	"github.com/labstack/echo/v4"
-	"github.com/qwqcode/qwquiver/lib"
+	"github.com/qwqcode/qwquiver/lib/exd"
 )
 
 // GetAll Api: /api/school/all
 func schoolAllHandler(c echo.Context) error {
 	examName := c.QueryParam("exam")
+	exam := exd.GetExam(examName)
 
-	if !lib.HasExam(examName) {
+	if exam == nil {
 		return RespError(c, "Exam 不存在")
 	}
 	// examConf := lib.GetExamConf(examName)
@@ -17,7 +18,7 @@ func schoolAllHandler(c echo.Context) error {
 	result := map[string][]string{}
 
 	schoolList := []string{}
-	lib.NewExamQuery(examName).Select("school").Group("school").Find(&schoolList)
+	exam.NewQuery().Select("school").Group("school").Find(&schoolList)
 
 	for _, school := range schoolList {
 		if school != "" {
@@ -26,7 +27,7 @@ func schoolAllHandler(c echo.Context) error {
 			}
 
 			classList := []string{}
-			lib.NewExamQuery(examName).Select("class").Where("school = ?", school).Group("class").Find(&classList)
+			exam.NewQuery().Select("class").Where("school = ?", school).Group("class").Find(&classList)
 			result[school] = append(result[school], classList...)
 		}
 	}

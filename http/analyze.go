@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/labstack/echo/v4"
-	"github.com/qwqcode/qwquiver/lib"
+	"github.com/qwqcode/qwquiver/lib/exd"
 	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/sirupsen/logrus"
@@ -27,7 +27,7 @@ func analyzeHandler(c echo.Context) error {
 	}
 
 	uncertain := false // 是否为不确定的数据
-	examList := lib.GetExamsByGrp(examGrp)
+	examList := exd.GetExamsByGrp(examGrp)
 	fields := []string{}
 	for _, f := range model.SFieldSubj {
 		fields = append(fields, model.ScoreFieldTransMap[f])
@@ -40,7 +40,7 @@ func analyzeHandler(c echo.Context) error {
 	{
 		for _, exam := range examList {
 			queryPersonSc := []model.Score{}
-			if rs := lib.FilterScores(lib.NewExamQuery(exam.Name), condList, false).Find(&queryPersonSc); rs.Error != nil {
+			if rs := exd.FilterScores(exam.NewQuery(), condList, false).Find(&queryPersonSc); rs.Error != nil {
 				logrus.Error("api.chart ", rs.Error)
 				continue
 			}
@@ -60,8 +60,8 @@ func analyzeHandler(c echo.Context) error {
 
 			// 统计此人此次考试的各科分数
 			var subjects []string
-			if exam.Conf.Subj != "" {
-				if err := utils.JSONDecode(exam.Conf.Subj, &subjects); err != nil {
+			if exam.Subj != "" {
+				if err := utils.JSONDecode(exam.Subj, &subjects); err != nil {
 					continue
 				}
 				if len(subjects) == 0 {
@@ -72,7 +72,7 @@ func analyzeHandler(c echo.Context) error {
 			}
 
 			var subjFullScore map[string]float64
-			if err := utils.JSONDecode(exam.Conf.SubjFullScore, &subjFullScore); err != nil {
+			if err := utils.JSONDecode(exam.SubjFullScore, &subjFullScore); err != nil {
 				continue
 			}
 			subjScores := map[string]interface{}{}
@@ -90,12 +90,12 @@ func analyzeHandler(c echo.Context) error {
 				subjScores[model.ScoreFieldTransMap[f]] = score
 			}
 
-			examKey := exam.Conf.Label
+			examKey := exam.Label
 			if examKey == "" {
-				examKey = exam.Conf.Name
+				examKey = exam.Name
 			}
 			subjScores["exam"] = examKey
-			subjScores["date"] = exam.Conf.Date
+			subjScores["date"] = exam.Date
 			exams = append(exams, subjScores)
 		}
 	}

@@ -6,6 +6,9 @@ import (
 	"gorm.io/gorm"
 )
 
+const ExamTbPf string = "EXAM_SCORES_" // 用于存放 Exam 数据的数据表名前缀
+const ExamConfTb string = "EXAM_CONF"  // ExamConf 数据表名
+
 // DB is database
 var DB *gorm.DB
 

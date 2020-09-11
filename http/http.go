@@ -12,9 +12,13 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var api *echo.Group
+var Injections = [](func(api *echo.Group)){}
+
 // Run 运行 http server
 func Run() {
 	e := echo.New()
+	e.HideBanner = true
 
 	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
 		AllowOrigins: []string{"http://localhost:3000"}, // For dev
@@ -31,6 +35,11 @@ func Run() {
 	api.GET("/conf", confHandler)
 	api.GET("/analyze", analyzeHandler)
 	api.GET("/school/all", schoolAllHandler)
+
+	// 功能注入
+	for _, inject := range config.HTTPInjections {
+		inject(e, api)
+	}
 
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", config.Instance.Port)))
 }

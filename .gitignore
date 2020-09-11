@@ -17,3 +17,8 @@
 config.yaml
 data
 .history
+
+# rela
+cli/cmd/rela.go
+
+rela

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/qwqcode/qwquiver/config"
@@ -12,13 +13,7 @@ import (
 	prefixed "github.com/x-cray/logrus-prefixed-formatter"
 )
 
-var (
-	cfgFile string
-
-	rootCmd = &cobra.Command{
-		Use:   "qwquiver",
-		Short: "A web-based exam results explorer.",
-		Long: `
+var Banner = `
     ____ __      ______ ___  __ _    _____  _____
    / __  / | /| / / __  / / / /_/ | / / _ \/ ___/
   / /_/ /| |/ |/ / /_/ / /_/ / /| |/ /  __/ /    
@@ -29,7 +24,15 @@ A website for exploring and analyzing exam results.
 
 More detail on https://github.com/qwqcode/qwquiver
 
-(c) 2020 qwqaq.com`,
+(c) 2020 qwqaq.com`
+
+var (
+	cfgFile string
+
+	rootCmd = &cobra.Command{
+		Use:   "qwquiver",
+		Short: "A web-based exam results explorer.",
+		Long:  Banner,
 		/* Run: func(cmd *cobra.Command, args []string) {
 			// Do Stuff Here
 		} */
@@ -39,7 +42,7 @@ More detail on https://github.com/qwqcode/qwquiver
 // Execute is execute cobra
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		logrus.Error(err)
+		fmt.Println(err)
 		os.Exit(1)
 	}
 }
@@ -53,6 +56,11 @@ func init() {
 	flagV(rootCmd, "logFile", "./data/qwquiver.log", "日志文件路径")
 	rootCmd.SetVersionTemplate("qwquiver {{printf \"version %s\" .Version}}\n")
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "配置文件路径 (defaults are './.qwquiver', '$HOME/.qwquiver' or '/etc/qwquiver/.qwquiver')")
+
+	// 功能注入
+	for _, inject := range config.CMDInjections {
+		inject(rootCmd)
+	}
 }
 
 func initConfig() {

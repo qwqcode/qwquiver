@@ -8,11 +8,8 @@ import (
 	"strings"
 
 	"github.com/labstack/echo/v4"
-	"github.com/qwqcode/qwquiver/lib"
-	"github.com/qwqcode/qwquiver/lib/utils"
+	"github.com/qwqcode/qwquiver/lib/exd"
 	"github.com/qwqcode/qwquiver/model"
-	"github.com/thoas/go-funk"
-	"gopkg.in/oleiade/reflections.v1"
 	"gorm.io/gorm"
 )
 
@@ -25,8 +22,8 @@ type queryAPICommonParms struct {
 	sortJSONStr  string
 	initConf     Map
 
+	exam        *model.Exam
 	query       *gorm.DB
-	examConf    *model.ExamConf
 	condList    map[string]string
 	sortList    map[string]int
 	dataDesc    string
@@ -45,8 +42,8 @@ func getQueryAPICommonParms(c echo.Context) *queryAPICommonParms {
 	isInitReq := c.QueryParam("init") != ""
 	if isInitReq {
 		// 若为初始化请求
-		examMap := lib.GetAllExamsSorted()
-		examGrpList := lib.GetAllExamGrps()
+		examMap := exd.GetAllExams()
+		examGrpList := exd.GetAllExams()
 		fieldTransDict := model.ScoreFieldTransMap
 
 		if len(examMap) == 0 {
@@ -55,7 +52,10 @@ func getQueryAPICommonParms(c echo.Context) *queryAPICommonParms {
 		}
 
 		if p.examName == "" {
-			p.examName = lib.GetAllExamsSorted()[0].Name // 设置默认 exam
+			p.examName = examMap[0].Name // 设置默认 exam
+			p.exam = &examMap[0]
+		} else {
+			p.exam = exd.GetExam(p.examName)
 		}
 
 		p.initConf = Map{
@@ -63,15 +63,16 @@ func getQueryAPICommonParms(c echo.Context) *queryAPICommonParms {
 			"examGrpList":    examGrpList,
 			"fieldTransDict": fieldTransDict,
 		}
+	} else {
+		p.exam = exd.GetExam(p.examName)
 	}
 
-	if !lib.HasExam(p.examName) {
+	if p.exam == nil {
 		RespError(c, "Exam 不存在")
 		return nil
 	}
 
-	p.query = lib.NewExamQuery(p.examName)
-	p.examConf = lib.GetExamConf(p.examName)
+	p.query = p.exam.NewQuery()
 
 	// JSON 解析
 	if p.whereJSONStr != "" { // Note: json 不允许出现 Number 类型的 Value (eg.{"Class":1} 必须为 {"Class":"1"})
@@ -105,10 +106,10 @@ func getQueryAPICommonParms(c echo.Context) *queryAPICommonParms {
 	} else {
 		if len(p.condList) == 1 && p.condList["NAME"] != "" {
 			// 模糊查询
-			p.query = lib.FilterScoresByRegStr(p.query, p.condList["NAME"])
+			p.query = exd.FilterScoresByRegStr(p.query, p.condList["NAME"])
 		} else {
 			// 精确查询
-			p.query = lib.FilterScores(p.query, p.condList, false)
+			p.query = exd.FilterScores(p.query, p.condList, false)
 		}
 	}
 
@@ -127,7 +128,7 @@ func getQueryAPICommonParms(c echo.Context) *queryAPICommonParms {
 
 	// 考试科目
 	var err error
-	p.subjectList, err = getExamSubjectList(*p.examConf)
+	p.subjectList, err = p.exam.GetSubjects()
 	if err != nil {
 		RespError(c, "考试科目数据获取失败", err.Error())
 		return nil
@@ -175,7 +176,7 @@ func queryHandler(c echo.Context) error {
 		"lastPage":    lastPage,
 		"subjectList": p.subjectList,
 		"list":        scList,
-		"examConf":    p.examConf,
+		"examConf":    p.exam,
 		"sortList":    p.sortList,
 		"condList":    p.condList,
 	}
@@ -210,90 +211,4 @@ func queryAvgHandler(c echo.Context) error {
 	return RespData(c, Map{
 		"avgList": avgList,
 	})
-}
-
-func scoreListPaginate(x []model.Score, skip int, size int) []model.Score {
-	if skip > len(x) {
-		skip = len(x)
-	}
-
-	end := skip + size
-	if end > len(x) {
-		end = len(x)
-	}
-
-	return x[skip:end]
-}
-
-func scoreListAvgList(scList []model.Score, fieldList []string) map[string]float64 {
-	avgList := map[string]float64{}
-	avgFields := []string{}
-	avgFields = append(avgFields, model.SFieldSubj...)
-	avgFields = append(avgFields, model.SFieldExtSum...)
-
-	for _, f := range funk.IntersectString(avgFields, fieldList) {
-		scores := funk.Map(scList, func(sc model.Score) float64 {
-			num, err := reflections.GetField(sc, f)
-			if err != nil {
-				return 0
-			}
-
-			switch num := num.(type) {
-			case int:
-				return float64(num)
-			case float64:
-				return num
-			default:
-				return 0
-			}
-		}).([]float64)
-
-		d := len(scores)
-		if d == 0 {
-			d = 1
-		}
-		avgList[f] = funk.SumFloat64(scores) / float64(d)
-	}
-
-	return avgList
-}
-
-// 获取 exam 的所有科目
-func getExamSubjectList(examConf model.ExamConf) (subjects []string, err error) {
-	if examConf.Subj != "" {
-		if err := utils.JSONDecode(examConf.Subj, &subjects); err != nil {
-			return []string{}, err
-		}
-	}
-	return
-}
-
-// 获取成绩数据的可用字段
-func getScoresFieldList(examConf model.ExamConf, scoreSample model.Score) (fieldList []string) {
-	fieldList = []string{}
-
-	// 将 examConf 预设的学科字段名加入
-	if examConf.Subj != "" {
-		var subjects []string
-		if err := utils.JSONDecode(examConf.Subj, &subjects); err == nil {
-			fieldList = append(fieldList, subjects...)
-		}
-	}
-
-	allField, err := reflections.Fields(&model.Score{})
-	if err != nil {
-		return
-	}
-	for _, fn := range allField {
-		val, err := reflections.GetField(scoreSample, fn)
-		if err != nil {
-			continue
-		}
-		nullVal, _ := reflections.GetField(model.Score{}, fn)
-		if val != nullVal && !funk.ContainsString(fieldList, fn) {
-			fieldList = append(fieldList, fn)
-		}
-	}
-
-	return fieldList
 }

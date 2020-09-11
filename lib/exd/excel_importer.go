@@ -1,4 +1,4 @@
-package lib
+package exd
 
 import (
 	"encoding/json"
@@ -12,6 +12,7 @@ import (
 	"github.com/360EntSecGroup-Skylar/excelize"
 	"github.com/cheggaaa/pb"
 	"github.com/oleiade/reflections"
+	"github.com/qwqcode/qwquiver/lib"
 	"github.com/qwqcode/qwquiver/lib/utils"
 	"github.com/qwqcode/qwquiver/model"
 	"github.com/sirupsen/logrus"
@@ -20,9 +21,10 @@ import (
 
 // ImportExcel 数据导入
 func ImportExcel(examName string, filename string, examConfJSON string) {
+	Exam := &model.Exam{}
+
 	examName = strings.TrimSpace(examName)
 	filename = strings.TrimSpace(filename)
-	var examConf *model.ExamConf
 
 	if filename == "" {
 		logrus.Error("ExcelImporter: Excel 文件路径不能为空")
@@ -48,17 +50,15 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	examTable := GetExamTableName(examName)
 
 	// examConf 处理
-	var jExamConf model.ExamConf
+	var jExamConf model.Exam
 	if examConfJSON != "" {
 		if err := json.Unmarshal([]byte(examConfJSON), &jExamConf); err != nil {
 			logrus.Error("ExcelImporter: 解析 examConf JSON 发生错误 ", err)
 			return
 		}
-		examConf = &jExamConf
-	} else {
-		examConf = &model.ExamConf{}
+		Exam = &jExamConf
 	}
-	examConf.Name = examName
+	Exam.Name = examName
 
 	logrus.Info("数据导入任务")
 	logrus.Info("ExamName='" + examName + "', ExcelFile='" + filename + "'")
@@ -105,7 +105,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	subjList := funk.IntersectString(fieldList, model.SFieldSubj) // 考试科目
 
 	subjListJSON, _ := utils.JSONEncode(subjList)
-	examConf.Subj = subjListJSON
+	Exam.Subj = subjListJSON
 
 	fmt.Println(" - 表头 POSITION =", fieldPos)
 	fmt.Println(" - 考试科目 =", subjList)
@@ -317,7 +317,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	}
 
 	var subjFullScore map[string]float64
-	if err := utils.JSONDecode(examConf.SubjFullScore, &subjFullScore); err != nil {
+	if err := utils.JSONDecode(Exam.SubjFullScore, &subjFullScore); err != nil {
 		subjFullScore = map[string]float64{}
 	}
 
@@ -327,20 +327,13 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 		}
 	}
 	subjFullScoreJSON, _ := utils.JSONEncode(subjFullScore)
-	examConf.SubjFullScore = subjFullScoreJSON
+	Exam.SubjFullScore = subjFullScoreJSON
 
 	logrus.Info("学科最高分数已获取")
 
-	// 保存 Exam 配置
-	if err := SaveExamConf(examConf); err != nil {
-		logrus.Error("ExcelImporter: 写入 ExamConf 发生错误 ", err)
-		panic(err)
-	}
-	logrus.Info("ExamConf 已成功写入")
-
 	// 将数据导入数据库
-	if err := CreateExam(examName); err != nil {
-		logrus.Error("创建 Exam Table 发生错误 ", err)
+	if err := CreateExam(Exam); err != nil {
+		logrus.Error("创建 Exam 发生错误 ", err)
 		panic(err)
 	}
 
@@ -352,7 +345,7 @@ func ImportExcel(examName string, filename string, examConfJSON string) {
 	saveErr := []error{}
 	itemCount := 0
 	for _, sc := range *scList {
-		if rs := DB.Table(examTable).Create(sc); rs.Error != nil {
+		if rs := lib.DB.Table(examTable).Create(sc); rs.Error != nil {
 			logrus.Error(rs.Error)
 			saveErr = append(saveErr, rs.Error)
 		}

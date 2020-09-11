@@ -4,8 +4,10 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/labstack/echo/v4"
 	"github.com/mitchellh/go-homedir"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
@@ -58,3 +60,10 @@ func Init(cfgFile string) {
 		logrus.Errorf("unable to decode into struct, %v", err)
 	}
 }
+
+var (
+	// CMDInjections 将在 Cmd 初始化时被执行（用于功能注入）
+	CMDInjections = [](func(rootCmd *cobra.Command)){}
+	// HTTPInjections 将在 Http 初始化时被执行（用于功能注入）
+	HTTPInjections = [](func(e *echo.Echo, api *echo.Group)){}
+)

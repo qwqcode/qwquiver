@@ -4,8 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 
-	"github.com/qwqcode/qwquiver/lib"
-	"github.com/qwqcode/qwquiver/model"
+	"github.com/qwqcode/qwquiver/lib/exd"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 )
@@ -20,73 +19,84 @@ var examCmd = &cobra.Command{
 	Args:    cobra.NoArgs,
 }
 
+var examListCmd = &cobra.Command{
+	Use:     "list",
+	Aliases: []string{"ls"},
+	Short:   "列出所有 Exam",
+	Run:     examListRun,
+	Args:    cobra.NoArgs,
+}
+
+var examRemoveCmd = &cobra.Command{
+	Use:     "remove [ExamName]",
+	Aliases: []string{"rm", "remove", "del"},
+	Short:   "删除指定的 Exam",
+	Run:     examRemoveRun,
+	Args:    cobra.RangeArgs(1, 1),
+}
+
+// $ qwquiver exam config
+var examConfigCmd = &cobra.Command{
+	Use:     "config [Command]",
+	Aliases: []string{"conf"},
+	Short:   "配置指定的 Exam",
+	Args:    cobra.NoArgs,
+}
+
+// $ qwquiver exam config set
+var configSetCmd = &cobra.Command{
+	Use:   "set [ExamName]",
+	Short: "配置指定的 Exam",
+	Args:  cobra.RangeArgs(1, 2),
+	Run:   examConfSetRun,
+}
+
+// $ qwquiver exam config get
+var configGetCmd = &cobra.Command{
+	Use:   "get [ExamName]",
+	Short: "获取指定 Exam 的配置",
+	Args:  cobra.RangeArgs(1, 1),
+	Run:   examConfigGetRun,
+}
+
 func init() {
 	rootCmd.AddCommand(examCmd)
 
-	var examListCmd = &cobra.Command{
-		Use:     "list",
-		Aliases: []string{"ls"},
-		Short:   "列出所有 Exam",
-		Run:     cmdExamListRun,
-		Args:    cobra.NoArgs,
-	}
+	// list
 	examCmd.AddCommand(examListCmd)
 
-	var examRemoveCmd = &cobra.Command{
-		Use:     "remove [ExamName]",
-		Aliases: []string{"rm", "remove", "del"},
-		Short:   "删除指定的 Exam",
-		Run:     cmdExamRemoveRun,
-		Args:    cobra.RangeArgs(1, 1),
-	}
-	flagP(examRemoveCmd, "force", "f", false, "强制删除，没有任何提示")
+	// remove
 	examCmd.AddCommand(examRemoveCmd)
+	flagP(examRemoveCmd, "force", "f", false, "强制删除，没有任何提示")
 
-	// $ qwquiver exam config
-	var examConfigCmd = &cobra.Command{
-		Use:     "config [Command]",
-		Aliases: []string{"conf"},
-		Short:   "配置指定的 Exam",
-		Args:    cobra.NoArgs,
-	}
+	// config
 	examCmd.AddCommand(examConfigCmd)
 
-	// $ qwquiver exam config set
-	var configSetCmd = &cobra.Command{
-		Use:   "set [ExamName]",
-		Short: "配置指定的 Exam",
-		Args:  cobra.RangeArgs(1, 1),
-		Run:   cmdExamConfigSetRun,
-	}
-	flag(configSetCmd, "grp", "", "修改 Exam Grp")
-	flag(configSetCmd, "label", "", "修改 Exam Label")
-	flag(configSetCmd, "subj", "", "修改 Exam Subj (JSON格式)")
-	flag(configSetCmd, "subj-full-score", "", "修改 Exam SubjFullScore (JSON格式)")
-	flag(configSetCmd, "date", "", "修改 Exam Date")
-	flag(configSetCmd, "note", "", "修改 Exam Note")
-	flag(configSetCmd, "json", "", "直接通过 JSON 格式修改所有参数")
+	// config set
 	examConfigCmd.AddCommand(configSetCmd)
+	flag(configSetCmd, "Grp", "", "修改 Exam Grp")
+	flag(configSetCmd, "Label", "", "修改 Exam Label")
+	flag(configSetCmd, "Subj", "", "修改 Exam Subj (JSON格式)")
+	flag(configSetCmd, "SubjFullScore", "", "修改 Exam SubjFullScore (JSON格式)")
+	flag(configSetCmd, "Date", "", "修改 Exam Date")
+	flag(configSetCmd, "Note", "", "修改 Exam Note")
+	flag(configSetCmd, "json", "", "直接通过 JSON 格式修改所有参数")
 
-	var configGetCmd = &cobra.Command{
-		Use:   "get [ExamName]",
-		Short: "获取指定 Exam 的配置",
-		Args:  cobra.RangeArgs(1, 1),
-		Run:   cmdExamConfigGetRun,
-	}
-	flagP(configGetCmd, "inline", "i", false, "输出未格式化的 JSON 数据")
+	// config get
 	examConfigCmd.AddCommand(configGetCmd)
+	flagP(configGetCmd, "inline", "i", false, "输出未格式化的 JSON 数据")
 }
 
-func cmdExamListRun(cmd *cobra.Command, args []string) {
-	allExamNames := lib.GetAllExamNames()
-	fmt.Printf("共有 %d 个 Exam\n", len(allExamNames))
-	for i, name := range allExamNames {
-		itemLen := lib.GetExamScoreLen(name)
-		fmt.Printf(" %d. %s (%d 条数据)\n", i+1, name, itemLen)
+func examListRun(cmd *cobra.Command, args []string) {
+	allExams := exd.GetAllExams()
+	fmt.Printf("共有 %d 个 Exam\n", len(allExams))
+	for i, exam := range allExams {
+		itemLen := exam.CountScores()
+		fmt.Printf(" %d. %s (%d 条数据)\n", i+1, exam.Name, itemLen)
 	}
 }
 
-func cmdExamRemoveRun(cmd *cobra.Command, args []string) {
+func examRemoveRun(cmd *cobra.Command, args []string) {
 	examName := args[0]
 
 	if force, _ := cmd.Flags().GetBool("force"); !force {
@@ -94,7 +104,7 @@ func cmdExamRemoveRun(cmd *cobra.Command, args []string) {
 		return
 	}
 
-	err := lib.RemoveExam(examName)
+	err := exd.RemoveExam(examName)
 	if err != nil {
 		fmt.Println("删除 Exam 发生错误")
 		fmt.Println(err)
@@ -102,82 +112,79 @@ func cmdExamRemoveRun(cmd *cobra.Command, args []string) {
 }
 
 // config set
-func cmdExamConfigSetRun(cmd *cobra.Command, args []string) {
+func examConfSetRun(cmd *cobra.Command, args []string) {
 	examName := args[0]
-	if !lib.HasExam(examName) {
+	if !exd.HasExam(examName) {
 		logrus.Error("Exam '" + examName + "' 不存在")
 		return
 	}
 
-	examConf := lib.GetExamConf(examName)
-	if examConf == nil {
-		// examConf 不存则创建一个新的
-		examConf = &model.ExamConf{Name: examName}
-		if err := lib.SaveExamConf(examConf); err != nil {
-			logrus.Error("创建 ExamConf 发生错误 ", err)
-			return
-		}
+	examConf := exd.GetExam(examName)
+
+	jsonStr, _ := cmd.Flags().GetString("json")
+	if jsonStr == "" {
+		jsonStr = args[1]
 	}
 
-	if jsonStr, _ := cmd.Flags().GetString("json"); jsonStr != "" {
-		if err := lib.UpdateExamConfByJSON(examConf, jsonStr); err != nil {
+	if jsonStr != "" {
+		if err := exd.UpdateExamConfByJSON(examConf, jsonStr); err != nil {
 			logrus.Error("保存 ExamConf 发生错误 ", err)
 			return
 		}
 	} else {
 		// 非直接 JSON 修改模式
-		if grp, _ := cmd.Flags().GetString("grp"); grp != "" {
+		if grp, _ := cmd.Flags().GetString("Grp"); grp != "" {
 			examConf.Grp = grp
 		}
-		if label, _ := cmd.Flags().GetString("label"); label != "" {
+		if label, _ := cmd.Flags().GetString("Label"); label != "" {
 			examConf.Label = label
 		}
-		if subjStr, _ := cmd.Flags().GetString("subj"); subjStr != "" {
+		if subjStr, _ := cmd.Flags().GetString("Subj"); subjStr != "" {
 			var subjList []string
 			err := json.Unmarshal([]byte(subjStr), &subjList)
 			if err == nil && subjList != nil {
 				examConf.Subj = subjStr
 			} else {
-				logrus.Error("尝试解析 flag '--subj' 的 JSON 数据时发生错误 ", err)
+				logrus.Error("尝试解析 flag '--Subj' 的 JSON 数据时发生错误 ", err)
 			}
 		}
-		if sfc, _ := cmd.Flags().GetString("subj-full-score"); sfc != "" {
+		if sfc, _ := cmd.Flags().GetString("SubjFullScore"); sfc != "" {
 			var subjFullScore map[string]float64
 			err := json.Unmarshal([]byte(sfc), &subjFullScore)
 			if err == nil && subjFullScore != nil {
 				examConf.SubjFullScore = sfc
 			} else {
-				logrus.Error("尝试解析 flag '--subj-full-score' 的 JSON 数据时发生错误 ", err)
+				logrus.Error("尝试解析 flag '--SubjFullScore' 的 JSON 数据时发生错误 ", err)
 			}
 		}
-		if date, _ := cmd.Flags().GetString("date"); date != "" {
+		if date, _ := cmd.Flags().GetString("Date"); date != "" {
 			examConf.Date = date
 		}
-		if note, _ := cmd.Flags().GetString("note"); note != "" {
+		if note, _ := cmd.Flags().GetString("Note"); note != "" {
 			examConf.Note = note
 		}
 		// TODO ... 比较 dirty 的代码，先将就这样
-		lib.SaveExamConf(examConf)
+		exd.UpdateExamConf(examConf)
 	}
 
-	examConfJSON := lib.GetExamConfJSONStr(examName, true)
+	examConfJSON := exd.GetExamConfJSONStr(examName, true)
 	fmt.Println("ExamConf 已更新")
 	fmt.Println(string(examConfJSON))
 }
 
 // config get
-func cmdExamConfigGetRun(cmd *cobra.Command, args []string) {
+func examConfigGetRun(cmd *cobra.Command, args []string) {
 	examName := args[0]
-	if !lib.HasExam(examName) {
+	if !exd.HasExam(examName) {
 		logrus.Error("Exam '" + examName + "' 不存在")
 		return
 	}
 
 	examConfJSON := "NULL"
 	if isInlineJSON, _ := cmd.Flags().GetBool("inline"); isInlineJSON {
-		examConfJSON = lib.GetExamConfJSONStr(examName, false)
+		examConfJSON = exd.GetExamConfJSONStr(examName, false)
 	} else {
-		examConfJSON = lib.GetExamConfJSONStr(examName, true)
+		examConfJSON = exd.GetExamConfJSONStr(examName, true)
 	}
 
 	fmt.Println(string(examConfJSON))
